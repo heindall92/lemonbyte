@@ -73,11 +73,12 @@
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-/* Cambio de tema: todo cambia en el mismo fotograma (sin transiciones sueltas que dejen cajas a medio color) y,
-   donde hay View Transitions, la página entera funde de un tema a otro mientras la bola del interruptor se desliza. */
-.theme-switching *,.theme-switching *::before,.theme-switching *::after{transition:none!important}
-.theme-switching .theme-sw .knob{transition:transform .35s var(--ease-drawer)!important}
-::view-transition-old(root),::view-transition-new(root){animation-duration:.32s;animation-timing-function:var(--ease-out)}
+/* Cambio de tema: un único fundido. Mientras dura (.theme-anim en <html>), TODOS los colores de la página pasan
+   al tema nuevo a la vez, con la misma duración y la misma curva: no quedan cajas a medio color ni piezas que
+   cambien antes que otras, y la barra de cristal sigue viva (sin capturas). El botón sigue rebotando al soltarlo
+   (escala .97) y la bola del interruptor se desliza con su muelle. Con movimiento reducido el cambio es instantáneo. */
+.theme-anim *,.theme-anim *::before,.theme-anim *::after{transition:background-color .32s var(--ease-out),color .32s var(--ease-out),border-color .32s var(--ease-out),outline-color .32s var(--ease-out),box-shadow .32s var(--ease-out),fill .32s var(--ease-out),stroke .32s var(--ease-out),transform .16s var(--ease-out),opacity .2s var(--ease-out)!important}
+.theme-anim .theme-sw .knob{transition:transform .35s var(--ease-drawer),background-color .32s var(--ease-out),box-shadow .32s var(--ease-out)!important}
 button,input{font:inherit;color:inherit}
 a{color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:10px}
@@ -556,6 +557,6 @@ a.cell:hover,button.cell:hover{transform:scale(1.15)}
   .xp-pop{display:none}
   .intro,.intro-video{transition:opacity .2s}
   .intro.out .intro-video{transform:none}
-  ::view-transition-old(root),::view-transition-new(root){animation:none}
+  .theme-anim *,.theme-anim *::before,.theme-anim *::after{transition:none!important}
   .lab:hover:not(:disabled){transform:none}
 }

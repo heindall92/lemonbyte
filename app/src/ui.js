@@ -605,19 +605,17 @@ const sysDark = matchMedia('(prefers-color-scheme: dark)');
 const isDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : sysDark.matches);
 { const t = pref.get('lemonbyte-theme', ''); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; }
 const themeUI = () => { themeBtn.setAttribute('aria-checked', isDark()); };
-/* El tema cambia de golpe en un solo fotograma (las transiciones de color se apagan un instante) y, si el
-   navegador tiene View Transitions y no se pide movimiento reducido, con un fundido de la página entera. */
+/* El tema cambia con un solo fundido: la clase .theme-anim da a todos los elementos la misma transición de
+   color durante el cambio y se quita al acabar. Sin View Transitions: no congelan la barra de cristal ni
+   duplican la bola del interruptor. */
+let themeTimer = 0;
 function switchTheme(apply) {
   const root = document.documentElement;
-  const run = () => {
-    root.classList.add('theme-switching');
-    apply();
-    themeUI();
-    void getComputedStyle(root).color; // aplica el tema nuevo con las transiciones apagadas
-    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
-  };
-  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(run);
-  else run();
+  clearTimeout(themeTimer);
+  root.classList.add('theme-anim');
+  apply();
+  themeUI();
+  themeTimer = setTimeout(() => root.classList.remove('theme-anim'), 420); // después de los .35 s más largos
 }
 themeBtn.addEventListener('click', () => { const t = isDark() ? 'light' : 'dark'; themeBtn.setAttribute('aria-checked', t === 'dark'); switchTheme(() => { document.documentElement.dataset.theme = t; pref.set('lemonbyte-theme', t); }); });
 if (sysDark.addEventListener) sysDark.addEventListener('change', () => switchTheme(() => {}));
