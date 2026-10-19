@@ -605,17 +605,34 @@ const sysDark = matchMedia('(prefers-color-scheme: dark)');
 const isDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : sysDark.matches);
 { const t = pref.get('lemonbyte-theme', ''); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; }
 const themeUI = () => { themeBtn.setAttribute('aria-checked', isDark()); };
-themeBtn.addEventListener('click', () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; pref.set('lemonbyte-theme', t); themeUI(); });
-if (sysDark.addEventListener) sysDark.addEventListener('change', themeUI);
+/* El tema cambia de golpe en un solo fotograma (las transiciones de color se apagan un instante) y, si el
+   navegador tiene View Transitions y no se pide movimiento reducido, con un fundido de la página entera. */
+function switchTheme(apply) {
+  const root = document.documentElement;
+  const run = () => {
+    root.classList.add('theme-switching');
+    apply();
+    themeUI();
+    void getComputedStyle(root).color; // aplica el tema nuevo con las transiciones apagadas
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
+  };
+  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(run);
+  else run();
+}
+themeBtn.addEventListener('click', () => { const t = isDark() ? 'light' : 'dark'; themeBtn.setAttribute('aria-checked', t === 'dark'); switchTheme(() => { document.documentElement.dataset.theme = t; pref.set('lemonbyte-theme', t); }); });
+if (sysDark.addEventListener) sysDark.addEventListener('change', () => switchTheme(() => {}));
 
 const ACCENTS = [['azul', 'Azul eléctrico', '#3f7bff'], ['rosa', 'Rosa', '#e3478f'], ['solar', 'Solar', '#e79a12'], ['glaciar', 'Glaciar', '#1fb8cc'], ['orquidea', 'Orquídea', '#8a68ff'], ['verde', 'Verde bosque', '#3d9152'], ['rojo', 'Rojo', '#e04848']];
-$('acc-dots').innerHTML = ACCENTS.map(([id, n, c]) => `<button type="button" class="press" data-acc="${id}" title="${n}" aria-label="${n}" aria-pressed="false" style="background:${c}"></button>`).join('');
+// La misma paleta en el lateral (escritorio) y en el menú «Más» (móvil, donde no hay lateral)
+const accDots = ACCENTS.map(([id, n, c]) => `<button type="button" class="press" data-acc="${id}" title="${n}" aria-label="${n}" aria-pressed="false" style="background:${c}"></button>`).join('');
+$('acc-dots').innerHTML = accDots;
+$('acc-dots-m').innerHTML = accDots;
 function setAccent(a) {
   if (a === 'azul') delete document.documentElement.dataset.accent; else document.documentElement.dataset.accent = a;
   document.querySelectorAll('[data-acc]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.acc === a));
   pref.set('lemonbyte-accent', a);
 }
-$('acc-dots').addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b) setAccent(b.dataset.acc); });
+['acc-dots', 'acc-dots-m'].forEach((id) => $(id).addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b) setAccent(b.dataset.acc); }));
 { const a = pref.get('lemonbyte-accent', 'azul'); setAccent(ACCENTS.some((x) => x[0] === a) ? a : 'azul'); }
 
 const soundBtn = $('sound');
@@ -655,6 +672,7 @@ $('quit').addEventListener('click', () => { hush(); go('labs'); });
 $('d-home').addEventListener('click', () => { if (L && L.unit) viewLevel = L.unit.li; go('labs'); });
 $('kbd-k').textContent = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
 document.addEventListener('keydown', (e) => {
+  if (closeIntro) { if (e.key === 'Escape') { e.preventDefault(); closeIntro(); } else if (e.key === 'Tab') { e.preventDefault(); $('intro-skip').focus(); } return; }
   const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName);
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if ($('search-dlg').hidden) openSearch(); else closeDialog('search-dlg'); return; }
   if (!$('search-dlg').hidden || !$('help-dlg').hidden) return;
@@ -683,6 +701,43 @@ addEventListener('hashchange', () => { const v = Object.keys(HASH).find((k) => '
   sync();
 }
 
+/* ═══ Intro ═══
+   Vídeo de la marca en la primera visita: horizontal en pantallas apaisadas y vertical en el móvil, WebM (VP9)
+   con MP4 (H.264) de respaldo. Se salta con el botón, con un clic, con Escape o al terminar. Si el navegador
+   no puede reproducirlo, la intro se cierra sola y la app sigue igual. */
+let closeIntro = null;
+function playIntro() {
+  const w = $('intro'), v = $('intro-video'), bar = $('intro-bar');
+  const outside = [$('app'), document.querySelector('.skip'), $('toasts'), $('search-dlg'), $('help-dlg')].filter(Boolean);
+  const back = document.activeElement;
+  w.hidden = false; w.classList.remove('out');
+  outside.forEach((el) => { el.inert = true; });
+  document.documentElement.classList.add('intro-on');
+  try { localStorage.setItem('lemonbyte-intro', '1'); } catch { /* */ }
+  const o = matchMedia('(max-aspect-ratio: 1/1)').matches ? 'v' : 'h';
+  v.innerHTML = `<source src="intro/lemonbyte-intro-${o}.webm" type="video/webm"><source src="intro/lemonbyte-intro-${o}.mp4" type="video/mp4">`;
+  let timer = 0;
+  closeIntro = () => {
+    if (!closeIntro) return;
+    closeIntro = null; clearTimeout(timer);
+    w.classList.add('out');
+    outside.forEach((el) => { el.inert = false; });
+    document.documentElement.classList.remove('intro-on');
+    if (back && back !== document.body && document.contains(back)) back.focus({ preventScroll: true });
+    setTimeout(() => { if (closeIntro) return; w.hidden = true; v.pause(); v.innerHTML = ''; v.load(); bar.style.setProperty('--p', 0); }, 520);
+  };
+  v.ontimeupdate = () => bar.style.setProperty('--p', v.duration ? v.currentTime / v.duration : 0);
+  v.onended = () => { timer = setTimeout(() => closeIntro && closeIntro(), 700); }; // el logo respira un instante
+  v.lastElementChild.onerror = () => closeIntro && closeIntro(); // ningún formato se pudo cargar
+  timer = setTimeout(() => closeIntro && closeIntro(), 15000);
+  $('intro-skip').focus({ preventScroll: true, focusVisible: false }); // el anillo sale si se navega con teclado
+  v.load();
+  const p = v.play();
+  if (p && p.catch) p.catch(() => closeIntro && closeIntro());
+}
+$('intro').addEventListener('click', () => closeIntro && closeIntro());
+$('replay-intro').addEventListener('click', () => { closeDialog('help-dlg'); playIntro(); });
+
 /* Gancho solo para las pruebas automáticas (?test): ejercicio en curso y estado. */
 if (/[?&]test\b/.test(location.search)) window.__LEMONBYTE__ = { E, current: () => (L ? L.queue[L.i] : null), state: () => S, sound: Sound };
 
@@ -698,5 +753,6 @@ sideState();
   if (location.hash === '#repaso' || location.hash === '#prueba') history.replaceState(null, '', '#inicio');
   render(start); show(start, { focus: false });
 }
+if (!$('intro').hidden) playIntro();
 connect();
 })();

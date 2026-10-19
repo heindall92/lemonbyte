@@ -11,13 +11,14 @@ LemonByte guarda poco y no envía nada: el progreso de aprendizaje (XP, flags, i
 | XSS | Un texto del contenido o del progreso pintado como HTML | Todo texto pasa por `esc()` antes de entrar en el DOM; el contenido del curso no admite `<` ni `>` (lo comprueba `engine.test.js`). |
 | Ejecución de código inyectado | Un fallo de escapado | CSP por hashes generada en el build: solo se ejecutan los bloques de `app/build.js`, sin `'unsafe-inline'` ni `'unsafe-eval'` para código. |
 | Exfiltración | Código que intenta enviar datos fuera | `default-src 'none'; connect-src 'none'; form-action 'none'; base-uri 'none'`. La app no hace ninguna petición de red. |
+| Vídeo de la intro | Un `src` a un vídeo de otro sitio | `media-src 'self'`: solo se reproducen los vídeos de `dist/intro/`, que se piden al mostrar la intro y nunca más. |
 | Acceso al estado desde la página | Una extensión que lee `window` | El estado solo se expone en `window.__LemonByte__` cuando la URL lleva `?test` (pruebas automáticas). |
 
 ## Verificación automática
 
 - `tests/engine.test.js` alimenta `sanitize()` con un progreso manipulado (`__proto__`, tipos imposibles, unidades e insignias inventadas) y comprueba que no pasa nada.
-- `tests/e2e_app.py` recarga la app con un `localStorage` corrupto, y comprueba que no hay errores de consola ni de CSP y que no sale ninguna petición de red.
-- `tests/a11y_app.py` pasa axe-core (WCAG 2.2 A/AA) por más de 80 estados (cada vista, ejercicio, pestaña de ayuda y la búsqueda) en claro y oscuro, a 1280 y 390 px.
+- `tests/e2e_app.py` recarga la app con un `localStorage` corrupto, y comprueba que no hay errores de consola ni de CSP y que no sale ninguna petición de red fuera del propio sitio.
+- `tests/a11y_app.py` pasa axe-core (WCAG 2.2 A/AA) por 90 estados (la intro, cada vista, ejercicio, pestaña de ayuda y la búsqueda) en claro y oscuro, a 1280 y 390 px.
 
 ## Informar de una vulnerabilidad
 

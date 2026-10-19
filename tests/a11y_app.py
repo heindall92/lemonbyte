@@ -1,5 +1,5 @@
 """Accesibilidad de LemonByte con axe-core (WCAG 2.2 A/AA): todas las vistas, cada tipo de ejercicio, la hoja de
-respuesta, la búsqueda, cada pestaña de la ayuda y el menú móvil; en tema claro y oscuro, escritorio y móvil.
+respuesta, la intro, la búsqueda, cada pestaña de la ayuda y el menú móvil; en tema claro y oscuro, escritorio y móvil.
 
 Uso:  python3 tests/a11y_app.py     (falla si hay alguna infracción; detalle en tests/artifacts/a11y.json)
 axe-core se inyecta con la CSP desactivada solo en este contexto de prueba; la CSP se prueba en e2e_app.py.
@@ -40,6 +40,9 @@ def solve(page, right=True):
 
 def states(page, mobile):
     nav = (lambda g: page.click(f'.bottom [data-go="{g}"]')) if mobile else (lambda g: page.click(f'.nav [data-go="{g}"]'))
+    page.goto(APP + "&intro"); page.wait_for_timeout(400)
+    yield "intro"
+    page.keyboard.press("Escape"); page.wait_for_timeout(650)
     yield "inicio"
     nav("labs"); yield "laboratorios"
     page.click('#route .st[data-level="3"]'); yield "nivel bloqueado"
