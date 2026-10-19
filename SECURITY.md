@@ -18,7 +18,7 @@ LemonByte guarda poco y no envía nada: el progreso de aprendizaje (XP, flags, i
 
 - `tests/engine.test.js` alimenta `sanitize()` con un progreso manipulado (`__proto__`, tipos imposibles, unidades e insignias inventadas) y comprueba que no pasa nada.
 - `tests/e2e_app.py` recarga la app con un `localStorage` corrupto, y comprueba que no hay errores de consola ni de CSP y que no sale ninguna petición de red fuera del propio sitio.
-- `tests/a11y_app.py` pasa axe-core (WCAG 2.2 A/AA) por 90 estados (la intro, cada vista, ejercicio, pestaña de ayuda y la búsqueda) en claro y oscuro, a 1280 y 390 px.
+- `tests/a11y_app.py` pasa axe-core (WCAG 2.2 A/AA) por unos 90 estados (la intro, cada vista, ejercicio, pestaña de ayuda y la búsqueda) en claro y oscuro, a 1280 y 390 px.
 
 ## Informar de una vulnerabilidad
 
