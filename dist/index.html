@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9WYK3jC9J8RtiDU29d9FUR/KKeU43f1HT88ER6jT+Oo=' 'sha256-9vDgm/1oYJRhgKJXp/Zv9H1NnqVsXElDXNVhp7EaXCs='; style-src 'sha256-OHMqqdOCB4GN6UDQtjY3ZJv2AMwfRiWyVLLaIcB8bD4='; style-src-attr 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; media-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9WYK3jC9J8RtiDU29d9FUR/KKeU43f1HT88ER6jT+Oo=' 'sha256-Y711ER4VixkJcb/Nh9flGheW5pH9p/6AtggJJng5FPM='; style-src 'sha256-EZUI//2s6IhLD26GTMpUugbu6el28csv+cnoK3EcTz4='; style-src-attr 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; media-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
@@ -540,6 +540,11 @@ a.cell:hover,button.cell:hover{transform:scale(1.15)}
   @starting-style{.more-pop{opacity:0;transform:scale(.96)}}
   .more-pop button{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:12px;border:0;background:transparent;font-weight:600;cursor:pointer;text-align:left}
   .more-pop button:hover{background:var(--fill)}
+  .more-pop{min-width:256px}
+  .more-acc{margin-top:4px;padding:10px 12px 8px;border-top:1px solid var(--line)}
+  .app .more-acc .acc-k span{display:inline}
+  .app .more-acc .acc-dots{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px}
+  .more-acc .acc-dots button{width:28px;height:28px;padding:0;border-radius:50%;flex:none}
   .sheet{bottom:0}
   .dlg{max-height:90vh}
   .dlg.search{margin-top:4vh}
@@ -760,6 +765,10 @@ a.cell:hover,button.cell:hover{transform:scale(1.15)}
       <button type="button" class="press" data-go="badges"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>Insignias</button>
       <button type="button" class="press" data-go="placement"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>Prueba de nivel</button>
       <button type="button" class="press" data-help="guia"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Ayuda</button>
+      <div class="more-acc" role="group" aria-labelledby="acc-k-m">
+        <span class="acc-k" id="acc-k-m"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg><span>Acento</span></span>
+        <div class="acc-dots" id="acc-dots-m"></div>
+      </div>
     </div>
   </nav>
 </div>
@@ -2789,13 +2798,16 @@ themeBtn.addEventListener('click', () => { const t = isDark() ? 'light' : 'dark'
 if (sysDark.addEventListener) sysDark.addEventListener('change', () => switchTheme(() => {}));
 
 const ACCENTS = [['azul', 'Azul eléctrico', '#3f7bff'], ['rosa', 'Rosa', '#e3478f'], ['solar', 'Solar', '#e79a12'], ['glaciar', 'Glaciar', '#1fb8cc'], ['orquidea', 'Orquídea', '#8a68ff'], ['verde', 'Verde bosque', '#3d9152'], ['rojo', 'Rojo', '#e04848']];
-$('acc-dots').innerHTML = ACCENTS.map(([id, n, c]) => `<button type="button" class="press" data-acc="${id}" title="${n}" aria-label="${n}" aria-pressed="false" style="background:${c}"></button>`).join('');
+// La misma paleta en el lateral (escritorio) y en el menú «Más» (móvil, donde no hay lateral)
+const accDots = ACCENTS.map(([id, n, c]) => `<button type="button" class="press" data-acc="${id}" title="${n}" aria-label="${n}" aria-pressed="false" style="background:${c}"></button>`).join('');
+$('acc-dots').innerHTML = accDots;
+$('acc-dots-m').innerHTML = accDots;
 function setAccent(a) {
   if (a === 'azul') delete document.documentElement.dataset.accent; else document.documentElement.dataset.accent = a;
   document.querySelectorAll('[data-acc]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.acc === a));
   pref.set('lemonbyte-accent', a);
 }
-$('acc-dots').addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b) setAccent(b.dataset.acc); });
+['acc-dots', 'acc-dots-m'].forEach((id) => $(id).addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b) setAccent(b.dataset.acc); }));
 { const a = pref.get('lemonbyte-accent', 'azul'); setAccent(ACCENTS.some((x) => x[0] === a) ? a : 'azul'); }
 
 const soundBtn = $('sound');

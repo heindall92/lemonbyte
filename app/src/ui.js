@@ -623,13 +623,16 @@ themeBtn.addEventListener('click', () => { const t = isDark() ? 'light' : 'dark'
 if (sysDark.addEventListener) sysDark.addEventListener('change', () => switchTheme(() => {}));
 
 const ACCENTS = [['azul', 'Azul eléctrico', '#3f7bff'], ['rosa', 'Rosa', '#e3478f'], ['solar', 'Solar', '#e79a12'], ['glaciar', 'Glaciar', '#1fb8cc'], ['orquidea', 'Orquídea', '#8a68ff'], ['verde', 'Verde bosque', '#3d9152'], ['rojo', 'Rojo', '#e04848']];
-$('acc-dots').innerHTML = ACCENTS.map(([id, n, c]) => `<button type="button" class="press" data-acc="${id}" title="${n}" aria-label="${n}" aria-pressed="false" style="background:${c}"></button>`).join('');
+// La misma paleta en el lateral (escritorio) y en el menú «Más» (móvil, donde no hay lateral)
+const accDots = ACCENTS.map(([id, n, c]) => `<button type="button" class="press" data-acc="${id}" title="${n}" aria-label="${n}" aria-pressed="false" style="background:${c}"></button>`).join('');
+$('acc-dots').innerHTML = accDots;
+$('acc-dots-m').innerHTML = accDots;
 function setAccent(a) {
   if (a === 'azul') delete document.documentElement.dataset.accent; else document.documentElement.dataset.accent = a;
   document.querySelectorAll('[data-acc]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.acc === a));
   pref.set('lemonbyte-accent', a);
 }
-$('acc-dots').addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b) setAccent(b.dataset.acc); });
+['acc-dots', 'acc-dots-m'].forEach((id) => $(id).addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b) setAccent(b.dataset.acc); }));
 { const a = pref.get('lemonbyte-accent', 'azul'); setAccent(ACCENTS.some((x) => x[0] === a) ? a : 'azul'); }
 
 const soundBtn = $('sound');

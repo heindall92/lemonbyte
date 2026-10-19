@@ -4,6 +4,7 @@
 
 - **Intro de la marca** en la primera visita: el limón se corta en espiral y aparece el logo de LemonByte. En pantallas apaisadas sale el vídeo horizontal y en el móvil el vertical, en WebM (VP9) con MP4 (H.264) de respaldo y sin sonido. Se salta con «Saltar intro», con un clic, con Escape o al terminar; mientras dura, la app queda inerte detrás y el foco no se escapa. No sale con movimiento reducido ni en visitas posteriores, y se puede repetir desde Ayuda › Acerca de › «Ver la intro». Los vídeos son ficheros aparte (unos 450 KB cada uno), así que solo se descargan la primera vez.
 - **Corregido el «cajón» al cambiar de tema.** El fondo de la página, los botones y las tarjetas cambiaban de color a ritmos distintos (0,35 s, 0,2 s y al instante), y durante esa fracción de segundo se veían rectángulos a medio color, el más visible el del propio interruptor. Ahora todo cambia en el mismo fotograma y, donde hay View Transitions, la página entera funde de un tema a otro mientras la bola se desliza. Una prueba e2e comprueba que no queda ninguna transición de color suelta (antes había más de 40).
+- **Acentos en el móvil.** En el móvil no hay barra lateral y la paleta de los siete acentos no aparecía en ningún sitio. Ahora está en el menú «Más», en una fila de puntos de 28 px, sincronizada con la del lateral.
 - `aria-checked` del interruptor de tema se actualiza al instante.
 - CSP: `media-src 'self'` para los vídeos de la intro.
 
