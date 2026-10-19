@@ -72,7 +72,7 @@ Las apps de idiomas enseñan a pedir un café. LemonByte empieza por ahí, pero 
 ## Cómo usarlo
 
 - **En el navegador:** abre [la app](https://heindall92.github.io/lemonbyte/). El progreso se guarda en tu navegador.
-- **Sin conexión:** descarga [`dist/index.html`](dist/index.html) y ábrelo con doble clic.
+- **Sin conexión:** descarga [`dist/index.html`](dist/index.html) y ábrelo con doble clic. Si quieres la intro, descarga también la carpeta [`dist/intro/`](dist/intro/); sin ella la app funciona igual y simplemente no la enseña.
 - **En claude.ai:** [`dist/artifact/lemonbyte.html`](dist/artifact/lemonbyte.html) es la misma app preparada como artifact; allí el progreso se guarda además en tu cuenta y te sigue entre dispositivos.
 
 | Atajo | Acción |
@@ -88,7 +88,7 @@ Las apps de idiomas enseñan a pedir un café. LemonByte empieza por ahí, pero 
 ## Privacidad y seguridad
 
 - **Cero peticiones de red.** Fuentes (Mona Sans y JetBrains Mono, de Fontsource), iconos (Lucide) y logo van dentro del HTML. El audio usa la síntesis de voz y Web Audio del sistema.
-- **CSP por hashes** generada en el build: solo se ejecuta el código de `app/build.js`; `connect-src 'none'`.
+- **CSP por hashes** generada en el build: solo se ejecuta el código de `app/build.js`; `connect-src 'none'`. Lo único que se carga aparte son los vídeos de la intro, del mismo sitio (`media-src 'self'`) y solo la primera vez.
 - **Progreso saneado al cargar:** un almacenamiento manipulado o corrupto se descarta campo a campo sin romper la app ni contaminar prototipos.
 
 Detalle en [SECURITY.md](SECURITY.md).
@@ -96,7 +96,7 @@ Detalle en [SECURITY.md](SECURITY.md).
 ## Desarrollo
 
 ```bash
-node app/build.js          # genera dist/index.html y dist/artifact/lemonbyte.html
+node app/build.js          # genera dist/index.html, dist/intro/ y dist/artifact/lemonbyte.html
 ./run_tests.sh             # build + motor y contenido + e2e en Chromium + axe-core
 python3 docs/capturas.py   # regenera las capturas del README
 ```
@@ -106,7 +106,8 @@ python3 docs/capturas.py   # regenera las capturas del README
 | Contenido (un fichero por nivel) | `app/src/content/a0.js` … `c1.js` |
 | Motor (lógica pura, sin DOM) | `app/src/engine.js` |
 | Interfaz | `app/src/ui.js`, `app/src/body.html`, `app/src/styles.css` |
-| Pruebas | `tests/engine.test.js` (27), `tests/e2e_app.py` (63 comprobaciones), `tests/a11y_app.py` (más de 80 estados) |
+| Intro (WebM VP9 y MP4 H.264, horizontal y vertical) | `app/media/` |
+| Pruebas | `tests/engine.test.js` (27), `tests/e2e_app.py` (85 comprobaciones), `tests/a11y_app.py` (90 estados) |
 
 Las pruebas del contenido comprueban que cada frase de ejemplo contiene su expresión, que no hay expresiones repetidas dentro de un nivel (ni en inglés ni en español) y que cada uno de los ejercicios posibles de las 752 expresiones tiene una sola respuesta correcta.
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* Construye LemonByte:
  *  - dist/index.html: un único HTML autónomo con CSP por hashes, sin peticiones de red (fuentes e iconos incrustados).
+ *  - dist/intro/: los vídeos de la intro (WebM y MP4, horizontal y vertical), que se cargan solo al mostrarla.
  *  - dist/artifact/lemonbyte.html: el mismo contenido sin <head>, para claude.ai (allí el progreso se guarda además en la cuenta).
  * Uso: node app/build.js */
 'use strict';
@@ -48,9 +49,12 @@ const sha = (t) => "'sha256-" + crypto.createHash('sha256').update(t, 'utf8').di
 const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => sha(m[1]));
 const styles = [...page.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => sha(m[1]));
 // Solo se ejecuta el código de este build; sin conexiones salientes ni recursos externos.
-const CSP = `default-src 'none'; script-src ${scripts.join(' ')}; style-src ${styles.join(' ')}; style-src-attr 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'`;
+const CSP = `default-src 'none'; script-src ${scripts.join(' ')}; style-src ${styles.join(' ')}; style-src-attr 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; media-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'`;
 const favicon = LOGO;
 const head = `<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n<meta http-equiv="Content-Security-Policy" content="${CSP}">\n<meta name="referrer" content="no-referrer">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<meta name="color-scheme" content="light dark">\n<meta name="description" content="LemonByte · Cyber English: 100 laboratorios de inglés del A0 al C1 con user y root flags, jefes finales, XP, rachas, insignias y repaso espaciado.">\n<link rel="icon" href="${favicon}">\n`;
 const standalone = head + page.replace('<a class="skip"', '</head>\n<body>\n<a class="skip"') + '</body>\n</html>\n';
 fs.writeFileSync(path.join(DIST, 'index.html'), standalone);
+// Vídeos de la intro: ficheros aparte para que solo se descarguen la primera vez que se ven
+fs.mkdirSync(path.join(DIST, 'intro'), { recursive: true });
+for (const f of fs.readdirSync(path.join(ROOT, 'media'))) fs.copyFileSync(path.join(ROOT, 'media', f), path.join(DIST, 'intro', f.replace(/^intro-/, 'lemonbyte-intro-')));
 console.log(`OK dist/index.html ${(standalone.length / 1024).toFixed(0)} KB · dist/artifact/lemonbyte.html ${(page.length / 1024).toFixed(0)} KB`);

@@ -1,5 +1,15 @@
 <a class="skip" href="#main">Saltar al contenido</a>
 
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-label="Intro de LemonByte" hidden>
+  <video class="intro-video" id="intro-video" muted playsinline preload="none" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>
+  <div class="intro-bar" aria-hidden="true"><i id="intro-bar"></i></div>
+  <button class="intro-skip press" id="intro-skip" type="button">Saltar intro{{i:chevron-right}}</button>
+</div>
+<script>
+/* La intro solo sale en la primera visita (o con ?intro). Se decide aquí, antes del primer pintado, para que la app no asome detrás. */
+(function () { try { var q = location.search; if (/[?&]intro\b/.test(q) || (!/[?&]test\b/.test(q) && !localStorage.getItem('lemonbyte-intro') && !matchMedia('(prefers-reduced-motion: reduce)').matches)) document.getElementById('intro').hidden = false; } catch (e) { /* sin almacenamiento, sin intro */ } })();
+</script>
+
 <div class="app" id="app">
   <!-- ═══ Barra lateral: panel flotante ═══ -->
   <aside class="side" id="side" aria-label="Navegación principal">
@@ -273,6 +283,7 @@
         </div>
         <h3>Sobre LemonByte</h3>
         <p>LemonByte es un laboratorio de inglés para IT y ciberseguridad, de código abierto, que funciona en un solo fichero HTML, sin servidor, sin cuentas obligatorias y sin seguimiento. Versión <b>{{version}}</b>, licencia GPLv2.</p>
+        <p><button class="btn sm press" type="button" id="replay-intro">{{i:play}}Ver la intro</button></p>
         <p class="note">{{i:info}}Proyecto independiente. No está afiliado ni respaldado por el Consejo de Europa (MCER), Cambridge English, INE ni Hack The Box. Las flags y las máquinas son un guiño a las plataformas de pentesting.</p>
         <h3>Ecosistema</h3>
         <div class="eco" id="eco"></div>
