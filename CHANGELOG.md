@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.2.4 · 2026-10-19
+
+- **El cambio de tema vuelve a ser fluido.** La 0.2.3 lo hacía con View Transitions, que congelan la página en una captura y funden la vieja con la nueva: la barra de cristal perdía el desenfoque en vivo durante el fundido, se veían dos bolas en el interruptor y la barra parecía brincar. Además, el botón pulsado volvía de golpe de la escala 0,97. Ahora es un fundido CSS en vivo, como al principio, pero coordinado: durante el cambio todos los elementos (749 transiciones, con el fondo y la barra incluidos) pasan al tema nuevo a la vez, con la misma duración (0,32 s) y la misma curva, así que no reaparece el «cajón» de la 0.2.2. La bola se desliza con su muelle y el botón rebota al soltarlo. Con movimiento reducido el cambio es instantáneo.
+- La prueba e2e del tema exige ahora que todas las transiciones de color tengan la misma duración y arranquen en el mismo instante, y que al acabar no quede ningún cambio pendiente. Falla con la 0.2.2 (43 transiciones a dos ritmos) y con la 0.2.3 (ninguna: era una captura).
+
 ## 0.2.3 · 2026-10-19
 
 - **Intro de la marca** en la primera visita: el limón se corta en espiral y aparece el logo de LemonByte. En pantallas apaisadas sale el vídeo horizontal y en el móvil el vertical, en WebM (VP9) con MP4 (H.264) de respaldo y sin sonido. Se salta con «Saltar intro», con un clic, con Escape o al terminar; mientras dura, la app queda inerte detrás y el foco no se escapa. No sale con movimiento reducido ni en visitas posteriores, y se puede repetir desde Ayuda › Acerca de › «Ver la intro». Los vídeos son ficheros aparte (unos 450 KB cada uno), así que solo se descargan la primera vez.

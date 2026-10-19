@@ -107,7 +107,7 @@ python3 docs/capturas.py   # regenera las capturas del README
 | Motor (lógica pura, sin DOM) | `app/src/engine.js` |
 | Interfaz | `app/src/ui.js`, `app/src/body.html`, `app/src/styles.css` |
 | Intro (WebM VP9 y MP4 H.264, horizontal y vertical) | `app/media/` |
-| Pruebas | `tests/engine.test.js` (27), `tests/e2e_app.py` (89 comprobaciones), `tests/a11y_app.py` (90 estados) |
+| Pruebas | `tests/engine.test.js` (27), `tests/e2e_app.py` (91 comprobaciones), `tests/a11y_app.py` (90 estados) |
 
 Las pruebas del contenido comprueban que cada frase de ejemplo contiene su expresión, que no hay expresiones repetidas dentro de un nivel (ni en inglés ni en español) y que cada uno de los ejercicios posibles de las 752 expresiones tiene una sola respuesta correcta.
 

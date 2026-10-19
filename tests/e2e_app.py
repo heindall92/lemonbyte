@@ -252,12 +252,23 @@ with sync_playwright() as p:
     dark = page.get_attribute("#theme", "aria-checked")
     page.click("#theme")
     check(page.get_attribute("#theme", "aria-checked") != dark, "el interruptor de tema cambia")
-    sueltas = page.evaluate("""new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(document.getAnimations()
-      .filter(a => a.transitionProperty && /color|background|border|shadow/.test(a.transitionProperty))
-      .map(a => a.transitionProperty + ' en ' + (a.effect.target.id || a.effect.target.className))))))""")
-    check(sueltas == [], f"el tema cambia de golpe, sin transiciones de color sueltas (el «cajón») {sueltas[:3]}")
-    knob = page.evaluate("document.getAnimations().filter(a => a.transitionProperty === 'transform' && a.effect.target.classList.contains('knob')).length")
-    check(knob == 1, "la bola del interruptor sí se desliza")
+    fundido = page.evaluate("""(() => { const t = document.getAnimations().filter(a => a.transitionProperty);
+      const col = t.filter(a => /color|background|border|shadow|fill|stroke/.test(a.transitionProperty) && !a.effect.target.classList.contains('knob'));
+      return { n: col.length, dur: [...new Set(col.map(a => a.effect.getTiming().duration))], start: [...new Set(col.map(a => a.startTime))],
+               knob: t.some(a => a.transitionProperty === 'transform' && a.effect.target.classList.contains('knob')),
+               body: col.some(a => a.effect.target === document.body), bar: col.some(a => a.effect.target.classList.contains('top')) }; })()""")
+    check(fundido["n"] > 100 and fundido["dur"] == [320] and len(fundido["start"]) == 1,
+          f"el tema funde entero a la vez: {fundido['n']} transiciones de color, misma duración {fundido['dur']} y mismo arranque")
+    check(fundido["body"] and fundido["bar"], "el fondo y la barra de cristal funden con el resto (sin cajas a medio color)")
+    check(fundido["knob"], "la bola del interruptor se desliza")
+    page.wait_for_timeout(500)
+    resto = page.evaluate("""(() => {
+      const num = (v) => (String(v).match(/-?[\\d.]+/g) || []).map(Number);
+      const visible = (a) => { const k = a.effect.getKeyframes(), p = a.transitionProperty.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        const x = num(k[0][p]), y = num(k[k.length - 1][p]); return x.length !== y.length || x.some((v, i) => Math.abs(v - y[i]) > 2); };
+      return { cls: document.documentElement.classList.contains('theme-anim'),
+               vis: document.getAnimations().filter(a => a.transitionProperty && visible(a)).map(a => a.transitionProperty + ' en ' + (a.effect.target.id || a.effect.target.className)) }; })()""")
+    check(not resto["cls"] and resto["vis"] == [], f"al acabar no queda ningún cambio de color pendiente {resto['vis'][:3]}")
     page.click('[data-acc="verde"]')
     page.reload()
     check(page.evaluate("document.documentElement.dataset.accent") == "verde" and page.get_attribute("#theme", "aria-checked") != dark, "tema y acento se recuerdan")
