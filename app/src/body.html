@@ -1,109 +1,289 @@
-<header class="top">
-  <div class="wrap">
-    <button class="brand press" id="go-home" type="button" aria-label="HERMES, ir al inicio"><span class="mk" aria-hidden="true">HE</span><span>HERMES</span><small>English Lab</small></button>
-    <div class="chips">
-      <span class="chip fire" title="Días seguidos">{{i:flame}}<b id="c-streak">0</b></span>
-      <span class="chip xp" title="Experiencia total">{{i:zap}}<b id="c-xp">0</b></span>
-      <span class="chip sync" id="c-sync" title="Dónde se guarda tu progreso">{{i:cloud-off}}<span>este navegador</span></span>
-      <button class="icon-btn press" id="theme" type="button" aria-label="Cambiar tema">{{i:moon}}</button>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<div class="app" id="app">
+  <!-- ═══ Barra lateral: panel flotante ═══ -->
+  <aside class="side" id="side" aria-label="Navegación principal">
+    <div class="side-head">
+      <img class="logo-img" src="{{LOGO}}" alt="" width="42" height="42">
+      <span class="brand-t"><b>Lemon<span class="byte">Byte</span></b><small>Cyber English</small></span>
     </div>
+    <button class="level-pill press" id="level-pill" type="button" data-go="labs">
+      <span class="lp-k" id="lp-k">A0</span>
+      <span class="lp-t"><b id="lp-name">Primeros pasos</b><small id="lp-sub">0 de 14 labs</small></span>
+      {{i:chevron-right}}
+    </button>
+    <nav class="nav" aria-label="Secciones">
+      <span class="nav-pill" aria-hidden="true"></span>
+      <a href="#inicio" data-go="home" class="press">{{i:house}}<span>Inicio</span></a>
+      <a href="#labs" data-go="labs" class="press">{{i:flask-conical}}<span>Laboratorios</span><em class="count" id="n-labs"></em></a>
+      <a href="#repaso" data-go="review" class="press">{{i:refresh-cw}}<span>Repaso</span><em class="count due" id="n-due" hidden></em></a>
+      <a href="#progreso" data-go="progress" class="press">{{i:chart-column}}<span>Progreso</span></a>
+      <a href="#insignias" data-go="badges" class="press">{{i:award}}<span>Insignias</span><em class="count" id="n-badges"></em></a>
+      <a href="#prueba" data-go="placement" class="press">{{i:gauge}}<span>Prueba de nivel</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="accents" role="group" aria-label="Color de acento">
+        <span class="acc-k">{{i:palette}}<span>Acento</span></span>
+        <div class="acc-dots" id="acc-dots"></div>
+      </div>
+      <div class="sync" id="c-sync" title="Dónde se guarda tu progreso">{{i:cloud-off}}<span>Progreso en este navegador</span></div>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <!-- ═══ Barra superior: píldora flotante ═══ -->
+    <header class="top">
+      <button class="icon-btn press" id="toggle-side" type="button" aria-label="Contraer la barra lateral" aria-controls="side" aria-expanded="true">{{i:panel-left}}</button>
+      <span class="top-brand" aria-hidden="true"><img class="logo-img sm" src="{{LOGO}}" alt="" width="30" height="30"><b>Lemon<span class="byte">Byte</span></b></span>
+      <div class="top-stats">
+        <span class="stat-chip fire" title="Días seguidos practicando">{{i:flame}}<b id="c-streak">0</b><span class="sr"> días de racha</span></span>
+        <span class="stat-chip xp" title="Experiencia total">{{i:zap}}<b id="c-xp">0</b><span class="sr"> XP</span></span>
+      </div>
+      <button class="search-btn press" id="open-search" type="button" aria-label="Buscar labs y expresiones (Ctrl K)">{{i:search}}<span>Buscar</span><kbd id="kbd-k">Ctrl K</kbd></button>
+      <button class="icon-btn press" id="sound" type="button" aria-pressed="true" aria-label="Sonido activado">{{i:volume-2}}</button>
+      <button class="theme-sw press" id="theme" type="button" role="switch" aria-checked="false" aria-label="Tema oscuro"><span class="knob"></span><span class="t-ico t-sun">{{i:sun}}</span><span class="t-ico t-moon">{{i:moon}}</span></button>
+      <button class="icon-btn press" id="open-help" type="button" aria-label="Ayuda y acerca de">{{i:circle-question-mark}}</button>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <!-- INICIO -->
+      <section class="view" id="v-home" aria-labelledby="h-home">
+        <div class="page-h">
+          <div>
+            <div class="eyebrow">{{i:citrus}}<span id="home-k">Nivel A0 · Primeros pasos</span></div>
+            <h1 id="h-home">Exprime tu inglés.</h1>
+            <p class="lede" id="home-lede">Cien laboratorios del A0 al C1, del primer «hello» al informe de pentest. Cada uno tiene su user flag y su root flag.</p>
+          </div>
+          <button class="btn primary press" id="continue" type="button">{{i:play}}<span id="continue-t">Empezar</span></button>
+        </div>
+
+        <div class="grid-home">
+          <article class="card next-card" id="next-card">
+            <div class="nc-top"><span class="tier-tag" id="nc-tier">Fácil</span><span class="kind-tag" id="nc-kind"></span></div>
+            <div class="nc-k">Siguiente laboratorio</div>
+            <h2 id="nc-title">Saludos</h2>
+            <p id="nc-en">Greetings · 8 expresiones</p>
+            <div class="nc-words" id="nc-words" lang="en"></div>
+          </article>
+          <article class="card goal-card">
+            <div class="gc-h"><h2>Meta diaria</h2><small id="goal-t">0 / 50 XP</small></div>
+            <div class="squeeze" aria-hidden="true"><i id="goal-bar"></i></div>
+            <div class="week" id="week" role="img" aria-label="XP de los últimos 7 días"></div>
+          </article>
+          <article class="card review-card">
+            <h2>{{i:refresh-cw}}Repaso</h2>
+            <p id="rev-p">Las expresiones que aprendas volverán justo antes de que se te olviden.</p>
+            <button class="btn press" id="review" type="button">{{i:refresh-cw}}<span id="rev-t">Nada pendiente</span></button>
+          </article>
+          <article class="card matrix-card">
+            <div class="gc-h"><h2>Tus 100 laboratorios</h2><small id="mx-sum">0 user · 0 root</small></div>
+            <div class="matrix" id="matrix-home" role="img" aria-label="Mapa de los 100 laboratorios"></div>
+            <div class="legend-row" aria-hidden="true"><span><i class="lg none"></i>Pendiente</span><span><i class="lg user"></i>User flag</span><span><i class="lg root"></i>Root flag</span><span><i class="lg boss"></i>Jefe</span></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- LABORATORIOS -->
+      <section class="view" id="v-labs" hidden aria-labelledby="h-labs">
+        <div class="page-h">
+          <div>
+            <div class="eyebrow">{{i:flask-conical}}<span id="labs-k">Laboratorios · A0</span></div>
+            <h1 id="h-labs">Primeros pasos</h1>
+            <p class="lede" id="labs-lede">Juega los labs en el orden que quieras. Con el 75 % superados se abre el jefe final.</p>
+          </div>
+        </div>
+        <div class="route" id="route" role="tablist" aria-label="Niveles"></div>
+        <div id="phases"></div>
+      </section>
+
+      <!-- PROGRESO -->
+      <section class="view" id="v-progress" hidden aria-labelledby="h-progress">
+        <div class="page-h"><div>
+          <div class="eyebrow">{{i:chart-column}}<span>Progreso</span></div>
+          <h1 id="h-progress">Cuánto has exprimido</h1>
+          <p class="lede">Tus 100 laboratorios, la XP de las dos últimas semanas y cómo va tu memoria.</p>
+        </div></div>
+        <div class="kpis" id="kpis"></div>
+        <article class="card">
+          <div class="gc-h"><h2>Mapa de laboratorios</h2><small>Una fila por nivel; la celda grande es el jefe</small></div>
+          <div class="matrix big" id="matrix-full" role="group" aria-label="Mapa de los 100 laboratorios por nivel. Pulsa una celda para abrir el lab."></div>
+        </article>
+        <div class="grid-2">
+          <article class="card">
+            <div class="gc-h"><h2>XP por día</h2><small>Últimos 14 días</small></div>
+            <div class="bars" id="bars14"></div>
+          </article>
+          <article class="card">
+            <div class="gc-h"><h2>Memoria</h2><small>Expresiones por caja de repaso</small></div>
+            <div class="boxes" id="boxes"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- INSIGNIAS -->
+      <section class="view" id="v-badges" hidden aria-labelledby="h-badges">
+        <div class="page-h"><div>
+          <div class="eyebrow">{{i:award}}<span>Insignias</span></div>
+          <h1 id="h-badges">Insignias</h1>
+          <p class="lede" id="b-p">Algunas son evidentes. Otras, sorpresa.</p>
+        </div></div>
+        <div class="badge-list" id="badge-list"></div>
+      </section>
+
+      <!-- LECCIÓN -->
+      <section class="view lesson-view" id="v-lesson" hidden aria-labelledby="l-name">
+        <div class="lesson">
+          <div class="l-top">
+            <button class="icon-btn press" id="quit" type="button" aria-label="Salir del laboratorio">{{i:x}}</button>
+            <div class="progress" role="progressbar" aria-label="Progreso del laboratorio" aria-valuemin="0" aria-valuemax="100" id="l-prog"><i id="l-bar"></i></div>
+            <span class="combo" id="combo" aria-live="polite"></span>
+          </div>
+          <div class="l-title"><span class="tier-tag" id="l-tier">Fácil</span><h1 id="l-name">Saludos</h1></div>
+          <div class="card ex" id="ex"></div>
+        </div>
+      </section>
+
+      <!-- FINAL -->
+      <section class="view" id="v-done" hidden aria-labelledby="d-h">
+        <div class="card done">
+          <div class="trophy" id="trophy">{{i:trophy}}</div>
+          <div><h1 id="d-h">Laboratorio completado</h1><p id="d-p"></p></div>
+          <div class="stats3">
+            <div><b id="d-xp">0</b><span>XP ganada</span></div>
+            <div><b id="d-acc">0 %</b><span>Acierto a la primera</span></div>
+            <div><b id="d-time">0:00</b><span>Tiempo</span></div>
+          </div>
+          <div class="flags" id="d-flags"></div>
+          <div class="new-badges" id="d-badges"></div>
+          <div class="actions">
+            <button class="btn press" id="d-home" type="button">{{i:flask-conical}}Ver laboratorios</button>
+            <button class="btn primary press" id="d-next" type="button">{{i:arrow-right}}Siguiente lab</button>
+          </div>
+        </div>
+      </section>
+      <p class="foot">LemonByte v{{version}} · Sin anuncios ni seguimiento · El audio usa las voces de tu dispositivo · <a href="https://github.com/heindall92/lemonbyte" target="_blank" rel="noopener noreferrer">Código abierto</a></p>
+    </main>
   </div>
-</header>
 
-<main class="wrap" id="main">
-  <!-- INICIO -->
-  <section id="v-home" aria-labelledby="h-home">
-    <div class="home">
-      <div>
-        <div class="card hero">
-          <div class="hero-top">
-            <div>
-              <div class="eyebrow" id="h-level-k">Nivel A0 · Primeros pasos</div>
-              <h1 id="h-home">Hola, operador. Tu siguiente máquina te espera.</h1>
-              <p id="h-sub">Cada unidad es una máquina: consigue la user flag aprobando la lección y la root flag haciéndola sin fallos.</p>
-            </div>
-            <button class="btn primary press" id="continue" type="button">{{i:play}}<span id="continue-t">Empezar</span></button>
-          </div>
-          <div class="route" id="route" role="group" aria-label="Niveles"><span class="fillbar" aria-hidden="true"></span></div>
-          <div class="goal">
-            <b>Meta diaria</b>
-            <div class="meter" aria-hidden="true"><i id="goal-bar"></i></div>
-            <small id="goal-t">0 / 50 XP</small>
-          </div>
-        </div>
-        <div class="sec-h"><h2 id="units-h">Máquinas del nivel A0</h2><p id="units-p">4 unidades</p></div>
-        <div class="units" id="units"></div>
-      </div>
-
-      <aside class="side">
-        <div class="card panel">
-          <h3>{{i:refresh-cw}}Repaso</h3>
-          <p id="rev-p">Las palabras vuelven justo antes de que se te olviden.</p>
-          <button class="btn primary press" id="review" type="button">{{i:refresh-cw}}<span id="rev-t">Repasar</span></button>
-        </div>
-        <div class="card panel">
-          <h3>{{i:gauge}}Prueba de nivel</h3>
-          <p>Doce preguntas como máximo. Desbloquea directamente los niveles que ya dominas.</p>
-          <button class="btn press" id="placement" type="button">{{i:target}}Hacer la prueba</button>
-        </div>
-        <div class="card panel">
-          <h3>{{i:award}}Insignias <span class="mono" id="bd-count" style="margin-left:auto;font-size:12px;color:var(--ink-3)"></span></h3>
-          <div class="badge-grid" id="badge-mini"></div>
-          <button class="link-btn" id="all-badges" type="button">Ver todas</button>
-        </div>
-      </aside>
+  <!-- ═══ Barra inferior (móvil) ═══ -->
+  <nav class="bottom" aria-label="Secciones (móvil)">
+    <a href="#inicio" data-go="home" class="press">{{i:house}}<span>Inicio</span></a>
+    <a href="#labs" data-go="labs" class="press">{{i:flask-conical}}<span>Labs</span></a>
+    <a href="#repaso" data-go="review" class="press">{{i:refresh-cw}}<span>Repaso</span></a>
+    <a href="#progreso" data-go="progress" class="press">{{i:chart-column}}<span>Progreso</span></a>
+    <button type="button" class="press" id="more-btn" aria-haspopup="true" aria-expanded="false" aria-controls="more-pop">{{i:ellipsis}}<span>Más</span></button>
+    <div class="more-pop" id="more-pop" hidden>
+      <button type="button" class="press" data-go="badges">{{i:award}}Insignias</button>
+      <button type="button" class="press" data-go="placement">{{i:gauge}}Prueba de nivel</button>
+      <button type="button" class="press" data-help="guia">{{i:circle-question-mark}}Ayuda</button>
     </div>
-    <p class="foot">Sin anuncios ni seguimiento. El audio usa las voces de tu propio dispositivo. · HERMES v{{version}} · <a href="https://github.com/heindall92/hermes-english-lab">código abierto</a></p>
-  </section>
+  </nav>
+</div>
 
-  <!-- LECCIÓN -->
-  <section id="v-lesson" hidden aria-label="Lección">
-    <div class="lesson">
-      <div class="l-top">
-        <button class="icon-btn press" id="quit" type="button" aria-label="Salir de la lección">{{i:x}}</button>
-        <div class="progress" role="progressbar" aria-label="Progreso de la lección" aria-valuemin="0" aria-valuemax="100" id="l-prog"><i id="l-bar"></i></div>
-        <span class="combo" id="combo" aria-live="polite"></span>
-      </div>
-      <div class="card ex" id="ex"></div>
-    </div>
-  </section>
-
-  <!-- FINAL -->
-  <section id="v-done" hidden aria-labelledby="d-h">
-    <div class="card done">
-      <div class="trophy">{{i:trophy}}</div>
-      <div>
-        <h2 id="d-h">Máquina completada</h2>
-        <p id="d-p"></p>
-      </div>
-      <div class="stats">
-        <div><b id="d-xp">0</b><span>XP ganada</span></div>
-        <div><b id="d-acc">0 %</b><span>Acierto a la primera</span></div>
-        <div><b id="d-time">0:00</b><span>Tiempo</span></div>
-      </div>
-      <div class="flags" id="d-flags"></div>
-      <div class="new-badges" id="d-badges"></div>
-      <div class="actions">
-        <button class="btn press" id="d-home" type="button">{{i:house}}Volver al mapa</button>
-        <button class="btn primary press" id="d-next" type="button">{{i:arrow-right}}Siguiente máquina</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- INSIGNIAS -->
-  <section id="v-badges" hidden aria-labelledby="b-h">
-    <div class="badges-page">
-      <button class="back press" id="b-back" type="button">{{i:chevron-left}}Volver</button>
-      <div class="sec-h" style="margin-top:0"><h2 id="b-h">Insignias</h2><p id="b-p"></p></div>
-      <div class="badge-list" id="badge-list"></div>
-    </div>
-  </section>
-</main>
-
+<!-- Hoja de respuesta: entra desde abajo y sale por el mismo camino -->
 <div class="sheet" id="sheet" role="status" aria-live="assertive">
-  <div class="wrap">
+  <div class="sheet-in">
     <div class="verdict" id="s-verdict"></div>
     <div class="detail" id="s-detail"></div>
     <button class="btn primary press" id="s-next" type="button">Continuar</button>
   </div>
 </div>
+
+<!-- Búsqueda tipo Spotlight -->
+<div class="dlg-wrap" id="search-dlg" hidden>
+  <div class="scrim" data-close></div>
+  <div class="dlg search" role="dialog" aria-modal="true" aria-label="Buscar">
+    <div class="s-field">{{i:search}}<input id="s-input" type="text" role="combobox" aria-expanded="true" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Busca un lab o una expresión: meeting, informe, phrasal…" aria-label="Buscar labs y expresiones" aria-controls="s-results"><kbd>Esc</kbd></div>
+    <div class="s-results" id="s-results" role="listbox" aria-label="Resultados"></div>
+  </div>
+</div>
+
+<!-- Centro de ayuda -->
+<div class="dlg-wrap" id="help-dlg" hidden>
+  <div class="scrim" data-close></div>
+  <div class="dlg help" role="dialog" aria-modal="true" aria-labelledby="help-h">
+    <div class="help-head">
+      <img class="logo-img" src="{{LOGO}}" alt="" width="42" height="42">
+      <div><h2 id="help-h">Centro de ayuda</h2><small>LemonByte Cyber English · v{{version}}</small></div>
+      <button class="icon-btn press" type="button" data-close aria-label="Cerrar la ayuda">{{i:x}}</button>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Secciones de la ayuda" id="help-tabs">
+      <button role="tab" type="button" id="ht-guia" aria-controls="hp-guia" aria-selected="true">{{i:compass}}Guía</button>
+      <button role="tab" type="button" id="ht-metodo" aria-controls="hp-metodo" aria-selected="false" tabindex="-1">{{i:calculator}}Método</button>
+      <button role="tab" type="button" id="ht-labs" aria-controls="hp-labs" aria-selected="false" tabindex="-1">{{i:flask-conical}}Laboratorios</button>
+      <button role="tab" type="button" id="ht-atajos" aria-controls="hp-atajos" aria-selected="false" tabindex="-1">{{i:keyboard}}Atajos</button>
+      <button role="tab" type="button" id="ht-glosario" aria-controls="hp-glosario" aria-selected="false" tabindex="-1">{{i:book-a}}Glosario</button>
+      <button role="tab" type="button" id="ht-acerca" aria-controls="hp-acerca" aria-selected="false" tabindex="-1">{{i:info}}Acerca de</button>
+    </div>
+    <div class="help-body" tabindex="0" aria-label="Contenido de la ayuda">
+      <div role="tabpanel" id="hp-guia" aria-labelledby="ht-guia" class="hp">
+        <h3>Cómo funciona LemonByte</h3>
+        <ol class="steps">
+          <li><b>Elige tu punto de partida.</b> Empieza en A0 o haz la <em>prueba de nivel</em>: doce preguntas que abren los niveles que ya dominas.</li>
+          <li><b>Juega laboratorios.</b> Cada lab trae ocho expresiones con su frase de ejemplo y diez ejercicios. Responde con el ratón o con las teclas 1–4.</li>
+          <li><b>Consigue las flags.</b> La <em>user flag</em> llega con un <span data-const="USER_FLAG"></span> % de acierto a la primera; la <em>root flag</em>, sin ningún fallo.</li>
+          <li><b>Derrota al jefe.</b> Con el <span data-const="BOSS_GATE"></span> % de los labs del nivel superados se abre el jefe final: doce retos de todo el nivel. Vencerlo abre el nivel siguiente.</li>
+          <li><b>Repasa.</b> Lo que aprendes vuelve en el repaso justo antes de que se te olvide.</li>
+        </ol>
+        <p class="note">{{i:volume-2}}Escucha cada palabra con el altavoz, o despacio con la tortuga. Los efectos de acierto y fallo se apagan desde la barra superior.</p>
+      </div>
+      <div role="tabpanel" id="hp-metodo" aria-labelledby="ht-metodo" class="hp" hidden></div>
+      <div role="tabpanel" id="hp-labs" aria-labelledby="ht-labs" class="hp" hidden></div>
+      <div role="tabpanel" id="hp-atajos" aria-labelledby="ht-atajos" class="hp" hidden>
+        <h3>Atajos de teclado</h3>
+        <table class="kbd-table">
+          <caption class="sr">Atajos de teclado</caption>
+          <tbody>
+            <tr><th scope="row"><kbd>Ctrl</kbd> <kbd>K</kbd></th><td>Buscar labs y expresiones</td></tr>
+            <tr><th scope="row"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></th><td>Elegir una opción</td></tr>
+            <tr><th scope="row"><kbd>Enter</kbd></th><td>Comprobar o continuar</td></tr>
+            <tr><th scope="row"><kbd>Esc</kbd></th><td>Cerrar diálogos o salir del lab</td></tr>
+            <tr><th scope="row"><kbd>←</kbd> <kbd>→</kbd></th><td>Moverse entre pestañas y niveles</td></tr>
+            <tr><th scope="row"><kbd>[</kbd></th><td>Contraer o abrir la barra lateral</td></tr>
+            <tr><th scope="row"><kbd>?</kbd></th><td>Abrir esta ayuda</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div role="tabpanel" id="hp-glosario" aria-labelledby="ht-glosario" class="hp" hidden>
+        <h3>Glosario</h3>
+        <dl class="glossary">
+          <dt>Laboratorio (lab)</dt><dd>Una unidad del curso: ocho expresiones y diez ejercicios.</dd>
+          <dt>User flag</dt><dd>Se consigue al acertar a la primera el <span data-const="USER_FLAG"></span> % de un lab.</dd>
+          <dt>Root flag</dt><dd>Se consigue al terminar un lab sin ningún fallo. Da XP extra.</dd>
+          <dt>Jefe final</dt><dd>Lab insane al final de cada nivel: mezcla expresiones de todo el nivel.</dd>
+          <dt>MCER</dt><dd>Marco Común Europeo de Referencia para las lenguas. LemonByte cubre del A1 al C1 y añade un A0 para empezar de cero.</dd>
+          <dt>Combo</dt><dd>Aciertos seguidos. Desde el tercero, cada acierto da XP extra.</dd>
+          <dt>Repaso espaciado</dt><dd>Técnica que repasa cada expresión a intervalos crecientes; aquí, con cinco cajas al estilo Leitner.</dd>
+          <dt>Phrasal verb</dt><dd>Verbo con partícula que cambia su significado: <span lang="en">set up</span>, <span lang="en">roll out</span>, <span lang="en">look into</span>.</dd>
+          <dt>Racha</dt><dd>Días seguidos con al menos un lab o repaso terminado.</dd>
+        </dl>
+      </div>
+      <div role="tabpanel" id="hp-acerca" aria-labelledby="ht-acerca" class="hp" hidden>
+        <div class="author">
+          <span class="avatar" aria-hidden="true">YR</span>
+          <div>
+            <b>Yoandy Ramírez Delgado</b>
+            <small>Pentester · AI Security · GRC · eJPTv2 · Máster en Ciberseguridad e IA</small>
+            <div class="author-links">
+              <a class="btn sm press" href="https://github.com/heindall92" target="_blank" rel="noopener noreferrer">{{i:github}}GitHub</a>
+              <span class="mail"><span class="mono" id="mail">yoandyramirezdelgado@gmail.com</span><button class="btn sm press" type="button" id="copy-mail">{{i:mail}}Copiar correo</button></span>
+            </div>
+          </div>
+        </div>
+        <h3>Sobre LemonByte</h3>
+        <p>LemonByte es un laboratorio de inglés para IT y ciberseguridad, de código abierto, que funciona en un solo fichero HTML, sin servidor, sin cuentas obligatorias y sin seguimiento. Versión <b>{{version}}</b>, licencia GPLv2.</p>
+        <p class="note">{{i:info}}Proyecto independiente. No está afiliado ni respaldado por el Consejo de Europa (MCER), Cambridge English, INE ni Hack The Box. Las flags y las máquinas son un guiño a las plataformas de pentesting.</p>
+        <h3>Ecosistema</h3>
+        <div class="eco" id="eco"></div>
+        <h3>¿Sigues con dudas?</h3>
+        <div class="support">
+          <a class="btn press" href="https://github.com/heindall92/lemonbyte/issues" target="_blank" rel="noopener noreferrer">{{i:bug}}Abrir una incidencia</a>
+          <a class="btn press" href="https://github.com/heindall92/lemonbyte" target="_blank" rel="noopener noreferrer">{{i:code}}Ver el código</a>
+        </div>
+      </div>
+    </div>
+    <div class="help-foot"><small>LemonByte · Yoandy Ramírez Delgado</small><button class="btn primary press" type="button" data-close>Entendido</button></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>

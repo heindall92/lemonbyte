@@ -1,25 +1,33 @@
-/* HERMES · interfaz. Toda la lógica de progreso vive en engine.js; aquí solo se pinta y se escucha. */
+/* LemonByte · interfaz. La lógica de progreso vive en engine.js; aquí se pinta, se escucha y se suena. */
 (function () {
 'use strict';
-const E = window.HermesEngine.build(window.HERMES_LEVELS);
-const { LEVELS, UNITS, BADGES } = E;
-const ICON = window.HERMES_ICONS;
+const E = window.LemonByteEngine.build(window.LEMONBYTE_LEVELS);
+const { LEVELS, UNITS, BADGES, TIERS, KINDS } = E;
+const ICON = window.LEMONBYTE_ICONS;
 const I = (n) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICON[n] || ''}</svg>`;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 const today = () => E.dayOf(new Date());
+const pref = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } } };
+const SECRET = new Set(['early', 'night', 'triple', 'combo-10']);
 
-/* ── Guardado: navegador siempre; cuenta de claude.ai cuando la página se abre como artifact ── */
-const LS_KEY = 'hermes-progress-v1';
+/* ═══ Guardado: navegador siempre; cuenta de claude.ai cuando se abre como artifact ═══ */
+const LS_KEY = 'lemonbyte-progress-v1';
 let S = E.fresh();
 let docRef = null, saveTimer = null, lastSaved = '';
-function loadLocal() { try { const r = localStorage.getItem(LS_KEY); if (r) S = E.sanitize(JSON.parse(r)); } catch { /* sin almacenamiento */ } }
+function loadLocal() {
+  try {
+    const r = localStorage.getItem(LS_KEY) || localStorage.getItem('hermes-progress-v1'); // migra la 0.1
+    if (r) S = E.sanitize(JSON.parse(r));
+  } catch { /* sin almacenamiento */ }
+}
 function persist() {
   S.updatedAt = Date.now();
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch { /* modo privado */ }
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
+    saveTimer = null;
     if (!docRef) return;
     const body = JSON.stringify(S);
     if (body === lastSaved) return;
@@ -28,7 +36,7 @@ function persist() {
 }
 function setSync(account) {
   const el = $('c-sync');
-  el.innerHTML = account ? `${I('cloud')}<span>en tu cuenta</span>` : `${I('cloud-off')}<span>este navegador</span>`;
+  el.innerHTML = account ? `${I('cloud')}<span>Progreso en tu cuenta</span>` : `${I('cloud-off')}<span>Progreso en este navegador</span>`;
   el.title = account ? 'Tu progreso se guarda en tu cuenta y te sigue entre dispositivos' : 'Tu progreso se guarda solo en este navegador';
 }
 async function connect() {
@@ -43,7 +51,7 @@ async function connect() {
     const snap = await docRef.get();
     if (snap.exists) {
       const remote = E.sanitize(snap.data());
-      if (remote.updatedAt > S.updatedAt) { S = remote; try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch { /* */ } renderHome(); }
+      if (remote.updatedAt > S.updatedAt) { S = remote; try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch { /* */ } render(); }
       else persist();
     } else if (S.updatedAt) persist();
     lastSaved = JSON.stringify(S);
@@ -51,7 +59,30 @@ async function connect() {
   } catch { setSync(false); }
 }
 
-/* ── Audio: voces en inglés del propio dispositivo ── */
+/* ═══ Sonido: sintetizado con Web Audio, sin ficheros ni red ═══ */
+const Sound = (() => {
+  let ctx = null, on = pref.get('lemonbyte-sound', '1') === '1';
+  const ac = () => { if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ctx = new C(); } if (ctx.state === 'suspended') ctx.resume(); return ctx; };
+  function tone(freq, at, dur, type = 'sine', vol = 0.12) {
+    const c = ac(); if (!c) return;
+    const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  const play = (notes) => { if (!on) return; try { notes.forEach((n) => tone(...n)); } catch { /* sin audio */ } };
+  return {
+    get on() { return on; },
+    set(v) { on = v; pref.set('lemonbyte-sound', v ? '1' : '0'); },
+    ok: () => play([[880, 0, 0.12, 'sine', 0.1], [1318.5, 0.08, 0.2, 'sine', 0.1]]),                 // dos notas que suben: acierto
+    ko: () => play([[233, 0, 0.16, 'triangle', 0.13], [174.6, 0.11, 0.24, 'triangle', 0.12]]),        // dos notas que bajan: fallo
+    flag: () => play([[523.3, 0, 0.14], [659.3, 0.09, 0.14], [784, 0.18, 0.3]]),                      // arpegio: user flag
+    root: () => play([[523.3, 0, 0.12], [659.3, 0.08, 0.12], [784, 0.16, 0.12], [1046.5, 0.24, 0.42], [1568, 0.36, 0.3, 'sine', 0.05]]), // arpegio largo con brillo: root flag
+    badge: () => play([[1318.5, 0, 0.1, 'sine', 0.07], [1760, 0.07, 0.22, 'sine', 0.07]]),
+  };
+})();
+
+/* ═══ Voz: inglés con las voces del propio dispositivo ═══ */
 const tts = 'speechSynthesis' in window ? window.speechSynthesis : null;
 let voice = null;
 function pickVoice() {
@@ -59,7 +90,7 @@ function pickVoice() {
   const vs = tts.getVoices().filter((v) => /^en(-|_)/i.test(v.lang));
   voice = vs.find((v) => /en-GB/i.test(v.lang) && /natural|premium|enhanced|google/i.test(v.name)) || vs.find((v) => /en-GB/i.test(v.lang)) || vs.find((v) => /en-US/i.test(v.lang)) || vs[0] || null;
 }
-if (tts) { pickVoice(); tts.addEventListener && tts.addEventListener('voiceschanged', pickVoice); }
+if (tts) { pickVoice(); if (tts.addEventListener) tts.addEventListener('voiceschanged', pickVoice); }
 const canSpeak = () => !!tts;
 function say(text, slow) {
   if (!tts) return;
@@ -67,94 +98,189 @@ function say(text, slow) {
 }
 const hush = () => { if (tts) try { tts.cancel(); } catch { /* */ } };
 
-/* ── Vistas ── */
-const VIEWS = ['home', 'lesson', 'done', 'badges'];
-function show(v) {
-  VIEWS.forEach((x) => { const el = $('v-' + x); el.hidden = x !== v; if (x === v) { el.classList.remove('view-in'); void el.offsetWidth; el.classList.add('view-in'); } });
-  if (v !== 'lesson') hideSheet();
-  scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' });
+/* ═══ Avisos ═══ */
+function toast(html, kind) {
+  const box = $('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast' + (kind ? ' ' + kind : '');
+  t.innerHTML = html;
+  box.appendChild(t);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 4000);
 }
-let viewLevel = null;
-function renderChips() { $('c-xp').textContent = S.xp; $('c-streak').textContent = E.liveStreak(S, today()); }
+
+/* ═══ Navegación ═══ */
+const VIEWS = ['home', 'labs', 'progress', 'badges', 'lesson', 'done'];
+const HASH = { home: 'inicio', labs: 'labs', progress: 'progreso', badges: 'insignias' };
+const TITLE = { home: 'Inicio', labs: 'Laboratorios', progress: 'Progreso', badges: 'Insignias', lesson: 'Laboratorio', done: 'Resultado' };
+let view = 'home', viewLevel = null;
+function show(v, { focus = true } = {}) {
+  view = v;
+  VIEWS.forEach((x) => { $('v-' + x).hidden = x !== v; });
+  if (v !== 'lesson') hideSheet();
+  document.querySelectorAll('[data-go]').forEach((a) => { if (a.tagName === 'A') { if (a.dataset.go === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); } });
+  document.title = `${TITLE[v]} · LemonByte`;
+  moveNavPill();
+  scrollTo({ top: 0, behavior: 'auto' });
+  if (focus) { const h = $('v-' + v).querySelector('h1'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
+}
+function moveNavPill() {
+  const a = document.querySelector('.nav a[aria-current="page"]');
+  const pill = document.querySelector('.nav-pill');
+  pill.style.opacity = a ? '1' : '0';
+  if (a) pill.style.setProperty('--y', a.offsetTop + 'px');
+}
+function go(target) {
+  closeMore();
+  if (target === 'review') return startReview();
+  if (target === 'placement') return startPlacement();
+  if (HASH[target] && location.hash !== '#' + HASH[target]) history.replaceState(null, '', '#' + HASH[target]);
+  render(target);
+  show(target);
+}
+function render(v = view) {
+  renderChrome();
+  if (v === 'home') renderHome();
+  if (v === 'labs') renderLabs();
+  if (v === 'progress') renderProgress();
+  if (v === 'badges') renderBadges();
+}
+
+/* ═══ Elementos comunes ═══ */
+const tierTag = (t) => `<span class="tier-tag" data-t="${t}">${TIERS[t].t}</span>`;
+const kindTag = (k) => `<span class="kind-tag">${I(KINDS[k].icon)}${KINDS[k].t}</span>`;
 const flagHtml = (st, long) => `<span class="flag ${st.user ? 'got-user' : ''}">${I(st.user ? 'check' : 'flag')}user${long ? ' flag' : ''}</span><span class="flag ${st.root ? 'got-root' : ''}">${I(st.root ? 'crown' : 'flag')}root${long ? ' flag' : ''}</span>`;
-function renderHome() {
-  renderChips();
+function renderChrome() {
+  $('c-xp').textContent = S.xp;
+  $('c-streak').textContent = E.liveStreak(S, today());
+  const open = E.maxOpenLevel(S), L = LEVELS[open];
+  const units = E.unitsOf(open);
+  $('lp-k').textContent = L.id;
+  $('lp-name').textContent = L.name;
+  $('lp-sub').textContent = `${units.filter((u) => E.unitState(S, u.id).user).length} de ${units.length} labs`;
+  $('n-labs').textContent = UNITS.filter((u) => E.unitState(S, u.id).user).length + '/100';
+  const due = E.dueItems(S, today()).length;
+  $('n-due').hidden = !due; $('n-due').textContent = due;
+  $('n-badges').textContent = Object.keys(S.badges).length;
+}
+function matrixHtml(interactive) {
   const open = E.maxOpenLevel(S);
-  if (viewLevel === null || viewLevel > open) viewLevel = open;
-  const L = LEVELS[open];
-  const doneUnits = UNITS.filter((u) => E.unitState(S, u.id).user).length;
+  return LEVELS.map((L, li) => `<div class="mx-row"><b>${L.id}</b><div class="mx-cells">${E.unitsOf(li).map((u) => {
+    const st = E.unitState(S, u.id), cls = `cell${u.boss ? ' boss' : ''}${st.root ? ' root' : st.user ? ' user' : ''}${li > open ? ' locked' : ''}`;
+    const label = `${u.es}: ${st.root ? 'root flag' : st.user ? 'user flag' : 'pendiente'}`;
+    return interactive && E.canPlay(S, u) ? `<button type="button" class="${cls}" data-unit="${u.id}" title="${esc(label)}" aria-label="${esc(label)}"></button>` : `<span class="${cls}" title="${esc(label)}"></span>`;
+  }).join('')}</div></div>`).join('');
+}
+
+/* ═══ Inicio ═══ */
+function renderHome() {
+  const open = E.maxOpenLevel(S), L = LEVELS[open];
+  const users = UNITS.filter((u) => E.unitState(S, u.id).user).length, roots = UNITS.filter((u) => E.unitState(S, u.id).root).length;
   const nu = E.nextUnit(S);
-  $('h-level-k').textContent = `Nivel ${L.id} · ${L.name}`;
-  $('continue-t').textContent = doneUnits ? 'Continuar' : 'Empezar';
-  $('continue').setAttribute('aria-label', `${doneUnits ? 'Continuar' : 'Empezar'} con «${nu.es}»`);
-  $('h-home').textContent = doneUnits ? `Siguiente máquina: ${nu.es}.` : 'Hola, operador. Tu primera máquina te espera.';
-  $('h-sub').textContent = `${doneUnits} de ${UNITS.length} máquinas con user flag · ${UNITS.filter((u) => E.unitState(S, u.id).root).length} con root flag.`;
-  // Ruta de niveles
-  const route = $('route');
-  route.querySelectorAll('.st').forEach((n) => n.remove());
-  LEVELS.forEach((Lv, li) => {
-    const done = E.levelDone(S, li), locked = li > open;
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'st press ' + (done ? 'done' : locked ? 'locked' : 'open');
-    b.setAttribute('aria-pressed', li === viewLevel ? 'true' : 'false');
-    b.setAttribute('aria-label', `Nivel ${Lv.id}, ${Lv.name}${locked ? ', bloqueado' : done ? ', superado' : ''}`);
-    b.innerHTML = `<span class="dot">${locked ? I('lock') : done ? I('check') : Lv.id}</span><span>${Lv.id}<br>${esc(Lv.name)}</span>`;
-    b.addEventListener('click', () => { viewLevel = li; renderHome(); });
-    route.appendChild(b);
-  });
-  route.style.setProperty('--p', Math.min(1, open / (LEVELS.length - 1)));
-  // Meta diaria
+  $('home-k').textContent = `Nivel ${L.id} · ${L.name}`;
+  $('h-home').textContent = users ? `Siguiente: ${nu.es}.` : 'Exprime tu inglés.';
+  $('home-lede').textContent = users ? `${users} de 100 laboratorios con user flag y ${roots} con root flag. Sigue así.` : 'Cien laboratorios del A0 al C1. Cada uno tiene su user flag y su root flag.';
+  $('continue-t').textContent = users ? 'Continuar' : 'Empezar';
+  $('continue').setAttribute('aria-label', `${users ? 'Continuar' : 'Empezar'} con «${nu.es}»`);
+  $('nc-tier').outerHTML = `<span class="tier-tag" id="nc-tier" data-t="${nu.tier}">${TIERS[nu.tier].t}</span>`;
+  $('nc-kind').innerHTML = `${I(KINDS[nu.kind].icon)}${KINDS[nu.kind].t}`;
+  $('nc-title').textContent = nu.es;
+  $('nc-en').textContent = nu.boss ? `${nu.en} · ${KINDS.jefe.d}` : `${nu.en} · ${nu.items.length} expresiones`;
+  $('nc-words').innerHTML = nu.boss ? '' : nu.items.slice(0, 5).map((it) => `<span>${esc(it[0])}</span>`).join('');
   const dxp = S.daily.day === today() ? S.daily.xp : 0;
   $('goal-bar').style.setProperty('--v', Math.min(1, dxp / E.DAILY_GOAL));
-  $('goal-t').textContent = `${Math.min(dxp, 999)} / ${E.DAILY_GOAL} XP`;
-  // Máquinas del nivel elegido
-  const VL = LEVELS[viewLevel], locked = viewLevel > open;
-  $('units-h').textContent = `Máquinas del nivel ${VL.id}`;
-  $('units-p').textContent = locked ? 'Consigue todas las user flags del nivel anterior o haz la prueba de nivel.' : `${VL.units.filter((u) => E.unitState(S, u.id).user).length} de ${VL.units.length} con user flag`;
-  const box = $('units'); box.innerHTML = '';
-  VL.units.forEach((u, ui) => {
-    const st = E.unitState(S, u.id);
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'unit press'; b.disabled = locked; b.dataset.unit = u.id;
-    b.innerHTML = `<div class="u-top"><span class="u-id">${VL.id}-${ui + 1}</span><span class="diff" aria-hidden="true">${[1, 2, 3, 4, 5].map((k) => `<i class="${k <= VL.diff ? 'on' : ''}"></i>`).join('')}</span></div>
-      <div><h3>${esc(u.es)}</h3><div class="u-en">${esc(u.en)} · ${u.items.length} expresiones</div></div>
-      <div class="flags">${flagHtml(st)}${st.best ? `<span class="u-best">mejor: ${st.best} %</span>` : ''}</div>`;
-    b.setAttribute('aria-label', `${u.es}, dificultad ${VL.diff} de 5. ${st.user ? 'User flag conseguida' : 'Sin user flag'}. ${st.root ? 'Root flag conseguida' : 'Sin root flag'}.${locked ? ' Bloqueada.' : ''}`);
-    b.addEventListener('click', () => startUnit(u.id));
-    box.appendChild(b);
-  });
-  // Repaso
+  $('goal-t').textContent = dxp >= E.DAILY_GOAL ? `${dxp} XP · meta cumplida` : `${dxp} / ${E.DAILY_GOAL} XP`;
+  const days = E.lastDays(S, today(), 7), max = Math.max(E.DAILY_GOAL, ...days.map((d) => d.xp));
+  const wd = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+  $('week').innerHTML = days.map((d, i) => `<div><i class="${d.xp ? 'on' : ''}${i === 6 ? ' today' : ''}" style="--h:${(d.xp / max).toFixed(3)}" title="${d.day}: ${d.xp} XP"></i><span>${wd[new Date(d.day + 'T12:00:00').getDay()]}</span></div>`).join('');
+  $('week').setAttribute('aria-label', 'XP de los últimos 7 días: ' + days.map((d) => d.xp).join(', '));
   const due = E.dueItems(S, today()).length;
   $('rev-t').textContent = due ? `Repasar ${Math.min(due, 12)} expresiones` : 'Nada pendiente';
   $('review').disabled = !due;
   $('rev-p').textContent = due ? `Tienes ${due} expresiones listas para repasar hoy.` : (Object.keys(S.items).length ? 'Todo al día. Vuelve mañana.' : 'Las expresiones que aprendas volverán justo antes de que se te olviden.');
-  // Insignias
-  $('bd-count').textContent = `${Object.keys(S.badges).length}/${BADGES.length}`;
-  const mini = $('badge-mini'); mini.innerHTML = '';
-  [...BADGES].sort((a, b) => (S.badges[b.id] ? 1 : 0) - (S.badges[a.id] ? 1 : 0)).slice(0, 8).forEach((bd) => {
-    const d = document.createElement('div'); d.className = 'bd' + (S.badges[bd.id] ? ' got' : ''); d.title = bd.t;
-    d.innerHTML = I(bd.icon) + `<span class="sr">${esc(bd.t)}${S.badges[bd.id] ? ' (conseguida)' : ''}</span>`;
-    mini.appendChild(d);
-  });
-}
-function renderBadges() {
-  $('b-p').textContent = `${Object.keys(S.badges).length} de ${BADGES.length} conseguidas`;
-  const list = $('badge-list'); list.innerHTML = '';
-  BADGES.forEach((bd) => {
-    const got = S.badges[bd.id];
-    const c = document.createElement('div'); c.className = 'card badge';
-    c.innerHTML = `<div class="bd${got ? ' got' : ''}">${I(got ? bd.icon : 'lock')}</div><div><b>${esc(bd.t)}</b><span>${esc(bd.d)}</span>${got ? `<small>Conseguida el ${got.split('-').reverse().join('/')}</small>` : ''}</div>`;
-    list.appendChild(c);
-  });
+  $('mx-sum').textContent = `${users} user · ${roots} root`;
+  $('matrix-home').innerHTML = matrixHtml(false);
+  $('matrix-home').setAttribute('aria-label', `Mapa de los 100 laboratorios: ${users} con user flag y ${roots} con root flag`);
 }
 
-/* ── Lección ── */
+/* ═══ Laboratorios ═══ */
+function renderLabs() {
+  const open = E.maxOpenLevel(S);
+  if (viewLevel === null || viewLevel > open) viewLevel = open;
+  const L = LEVELS[viewLevel], li = viewLevel, locked = li > open;
+  $('labs-k').textContent = `Laboratorios · ${L.id}`;
+  $('h-labs').textContent = L.name;
+  $('labs-lede').textContent = locked ? 'Nivel bloqueado: derrota al jefe final del nivel anterior o haz la prueba de nivel.' : `Juega los labs en el orden que quieras. Con ${E.bossNeed(li)} de ${E.contentOf(li).length} superados se abre el jefe final.`;
+  $('route').innerHTML = LEVELS.map((Lv, i) => {
+    const units = E.unitsOf(i), got = units.filter((u) => E.unitState(S, u.id).user).length;
+    const st = E.levelDone(S, i) ? 'done' : i > open ? 'locked' : 'open';
+    return `<button type="button" role="tab" class="st press ${st}" data-level="${i}" aria-selected="${i === li}" tabindex="${i === li ? 0 : -1}" aria-label="Nivel ${Lv.id}, ${Lv.name}: ${got} de ${units.length}${st === 'locked' ? ', bloqueado' : st === 'done' ? ', superado' : ''}">
+      <span class="st-id">${Lv.id}${st === 'locked' ? I('lock') : st === 'done' ? I('check') : ''}</span><span class="st-n">${esc(Lv.name)}</span><span class="st-bar"><i style="--v:${(got / units.length).toFixed(3)}"></i></span></button>`;
+  }).join('');
+  const groups = ['facil', 'media', 'dificil', 'insane'].map((t) => ({ t, units: E.unitsOf(li).filter((u) => u.tier === t) }));
+  $('phases').innerHTML = groups.map(({ t, units }, gi) => `<section class="phase" aria-labelledby="ph-${t}">
+    <div class="phase-h">${tierTag(t)}<h2 id="ph-${t}">${t === 'insane' ? 'Jefe final' : `Fase ${gi + 1}`}</h2><small>${TIERS[t].d}</small></div>
+    <div class="labs">${units.map((u) => labCard(u, locked)).join('')}</div></section>`).join('');
+}
+function labCard(u, levelLocked) {
+  const st = E.unitState(S, u.id), playable = !levelLocked && E.canPlay(S, u);
+  if (u.boss) {
+    const need = E.bossNeed(u.li), have = E.contentOf(u.li).filter((x) => E.unitState(S, x.id).user).length;
+    return `<button type="button" class="lab boss press" data-unit="${u.id}"${playable ? '' : ' disabled'} aria-label="${esc(u.es)}. ${playable ? 'Disponible' : `Bloqueado: ${have} de ${need} labs`}. ${st.user ? 'User flag conseguida.' : ''} ${st.root ? 'Root flag conseguida.' : ''}">
+      <span class="boss-ico">${I('skull')}</span>
+      <span><span class="lab-id">${u.level} · INSANE</span><h3>${esc(u.es)}</h3><span class="gate">${playable ? KINDS.jefe.d : `Se abre con ${need} labs superados · llevas ${have}`}</span></span>
+      <span class="flags">${flagHtml(st)}</span></button>`;
+  }
+  return `<button type="button" class="lab press" data-unit="${u.id}"${playable ? '' : ' disabled'} aria-label="${esc(u.es)}, ${TIERS[u.tier].t}, tipo ${KINDS[u.kind].t}. ${st.user ? 'User flag conseguida' : 'Sin user flag'}. ${st.root ? 'Root flag conseguida' : 'Sin root flag'}.${playable ? '' : ' Bloqueado.'}">
+    <span class="lab-top"><span class="lab-id">${u.level}-${String(u.ui + 1).padStart(2, '0')}</span>${kindTag(u.kind)}</span>
+    <span><h3>${esc(u.es)}</h3><span class="lab-en" lang="en">${esc(u.en)}</span></span>
+    <span class="flags">${flagHtml(st)}${st.best ? `<span class="best">${st.best} %</span>` : ''}</span></button>`;
+}
+
+/* ═══ Progreso ═══ */
+function renderProgress() {
+  const users = UNITS.filter((u) => E.unitState(S, u.id).user).length, roots = UNITS.filter((u) => E.unitState(S, u.id).root).length;
+  const boxes = E.boxCounts(S), learned = E.ITEMS.length - boxes[0];
+  $('kpis').innerHTML = [
+    ['XP total', S.xp, 'zest'], ['Labs con user flag', `${users}/100`], ['Root flags', roots], ['Expresiones vistas', `${learned}/${E.ITEMS.length}`],
+  ].map(([k, v, c]) => `<div class="card kpi ${c || ''}"><span>${k}</span><b>${v}</b></div>`).join('');
+  $('matrix-full').innerHTML = matrixHtml(true);
+  const days = E.lastDays(S, today(), 14), max = Math.max(E.DAILY_GOAL, ...days.map((d) => d.xp));
+  $('bars14').innerHTML = days.map((d, i) => `<div><i class="${d.xp ? 'on' : ''}${i === 13 && d.xp ? ' today' : ''}" style="--h:${(d.xp / max).toFixed(3)}" title="${d.day}: ${d.xp} XP"></i><span>${d.day.slice(8)}</span></div>`).join('');
+  $('bars14').setAttribute('role', 'img');
+  $('bars14').setAttribute('aria-label', 'XP de los últimos 14 días: ' + days.map((d) => d.xp).join(', '));
+  const names = ['Sin ver', 'Caja 1 · mañana', 'Caja 2 · 3 días', 'Caja 3 · 7 días', 'Caja 4 · 14 días', 'Caja 5 · 30 días'];
+  const top = Math.max(1, ...boxes);
+  $('boxes').innerHTML = boxes.map((n, i) => `<div class="box-row"><span>${names[i]}</span><span class="box-track"><i style="--v:${(n / top).toFixed(3)}"></i></span><b>${n}</b></div>`).join('');
+}
+
+/* ═══ Insignias ═══ */
+function renderBadges() {
+  const got = Object.keys(S.badges).length;
+  $('b-p').textContent = `${got} de ${BADGES.length} conseguidas. Algunas son evidentes; otras, sorpresa.`;
+  $('badge-list').innerHTML = BADGES.map((bd) => {
+    const when = S.badges[bd.id], hide = SECRET.has(bd.id) && !when;
+    return `<div class="card badge${hide ? ' secret' : ''}"><div class="bd${when ? ' got' : ''}">${I(when ? bd.icon : hide ? 'sparkles' : 'lock')}</div><div><b>${hide ? 'Insignia secreta' : esc(bd.t)}</b><span>${hide ? 'Sigue practicando para descubrirla.' : esc(bd.d)}</span>${when ? `<small>Conseguida el ${when.split('-').reverse().join('/')}</small>` : ''}</div></div>`;
+  }).join('');
+}
+
+/* ═══ Lección ═══ */
 let L = null;
-const startUnit = (unitId) => beginSession({ mode: 'unit', unit: UNITS.find((u) => u.id === unitId), queue: E.lessonPlan(unitId, { canSpeak: canSpeak() }) });
+function startUnit(unitId) {
+  const u = E.UNIT_BY_ID[unitId];
+  if (!u || !E.canPlay(S, u)) return;
+  beginSession({ mode: 'unit', unit: u, queue: E.lessonPlan(unitId, { canSpeak: canSpeak() }) });
+}
+function startReview() { const d = E.dueItems(S, today()); if (!d.length) { toast(`${I('check')}Nada que repasar hoy`); return; } beginSession({ mode: 'review', queue: E.reviewPlan(d, { canSpeak: canSpeak() }) }); }
+function startPlacement() { beginSession({ mode: 'placement', queue: E.placementPlan() }); }
 function beginSession(o) {
-  hush();
-  L = { results: [], ...o, i: 0, total: o.queue.length, ok: 0, firstWrong: new Set(), xp: 0, combo: 0, start: Date.now(), answered: false };
-  show('lesson'); renderEx();
+  hush(); closeDialogs();
+  L = { results: [], ...o, i: 0, total: o.queue.length, ok: 0, firstWrong: new Set(), xp: 0, combo: 0, best: 0, start: Date.now(), answered: false };
+  const tier = o.unit ? o.unit.tier : o.mode === 'review' ? 'media' : 'facil';
+  $('l-tier').outerHTML = `<span class="tier-tag" id="l-tier" data-t="${tier}">${o.unit ? TIERS[tier].t : o.mode === 'review' ? 'Repaso' : 'Prueba'}</span>`;
+  $('l-name').textContent = o.unit ? o.unit.es : o.mode === 'review' ? 'Repaso espaciado' : 'Prueba de nivel';
+  show('lesson', { focus: false });
+  renderEx();
 }
 function setProgress() {
   const v = Math.min(1, L.ok / L.total);
@@ -162,7 +288,7 @@ function setProgress() {
   $('l-prog').setAttribute('aria-valuenow', Math.round(v * 100));
   $('combo').textContent = L.combo >= 3 ? `×${L.combo}` : '';
 }
-const KIND = { meaning: '¿Qué significa?', reverse: '¿Cómo se dice en inglés?', listen: 'Escucha y elige lo que oyes', gap: 'Completa la frase', build: 'Traduce ordenando las palabras', type: 'Escríbelo en inglés' };
+const KIND_TXT = { meaning: '¿Qué significa?', reverse: '¿Cómo se dice en inglés?', listen: 'Escucha y elige lo que oyes', gap: 'Completa la frase', build: 'Traduce ordenando las palabras', type: 'Escríbelo en inglés' };
 function renderEx() {
   setProgress();
   const ex = L.queue[L.i];
@@ -172,7 +298,7 @@ function renderEx() {
   box.dataset.type = type;
   const speakBtn = (text, big) => (canSpeak() ? `<button class="speak press${big ? ' big-sp' : ''}" type="button" data-say="${esc(text)}" aria-label="Escuchar">${I('volume-2')}</button>` : '');
   const slowBtn = (text) => (canSpeak() ? `<button class="speak slow press" type="button" data-say="${esc(text)}" data-slow="1" aria-label="Escuchar despacio">${I('turtle')}</button>` : '');
-  let html = `<div class="ex-k">${KIND[type]}${L.mode === 'placement' ? ` · ${LEVELS[ex.li].id}` : ''}</div>`;
+  let html = `<div class="ex-k">${KIND_TXT[type]}${L.mode === 'placement' ? ` · ${LEVELS[ex.li].id}` : ''}</div>`;
   if (type === 'meaning') html += `<div class="prompt"><span class="big" lang="en">${esc(item.en)}</span>${speakBtn(item.en)}</div>`;
   if (type === 'reverse' || type === 'type') html += `<div class="prompt"><span class="big">${esc(item.es)}</span></div>`;
   if (type === 'listen') html += `<div class="prompt">${speakBtn(item.en, true)}${slowBtn(item.en)}</div>`;
@@ -220,17 +346,19 @@ function answer(value, btn) {
   if (ex.type === 'gap') { const bl = $('ex').querySelector('.blank'); bl.textContent = E.gapOf(ex.item).word; bl.classList.add(ok ? 'filled-ok' : 'filled-ko'); }
   if (L.mode === 'placement') L.results.push({ li: ex.li, ok });
   if (ok) {
-    L.ok++; L.combo++;
+    Sound.ok();
+    L.ok++; L.combo++; L.best = Math.max(L.best, L.combo);
     if (L.mode !== 'placement') { const g = E.xpFor(L.combo); L.xp += g; xpPop(g, btn || $('check')); if (first) E.srs(S, ex.item.key, true, t); }
     if (ex.type === 'listen') S.stats.listen++;
     if (ex.type === 'build') S.stats.build++;
     if (ex.type === 'type') S.stats.type++;
   } else {
+    Sound.ko();
     L.combo = 0;
     if (first) L.firstWrong.add(L.i);
     if (L.mode !== 'placement') { E.srs(S, ex.item.key, false, t); L.queue.push({ ...ex, retried: true }); }
   }
-  if (!ok || ex.type !== 'listen') say(ex.type === 'build' ? ex.item.exEn : ex.item.en);
+  if (!ok || ex.type !== 'listen') setTimeout(() => say(ex.type === 'build' ? ex.item.exEn : ex.item.en), 260);
   setProgress();
   showSheet(ok, ex);
 }
@@ -238,10 +366,10 @@ function xpPop(n, anchor) {
   if (reduce.matches || !anchor) return;
   const r = anchor.getBoundingClientRect();
   const p = document.createElement('div'); p.className = 'xp-pop'; p.setAttribute('aria-hidden', 'true'); p.textContent = `+${n} XP`;
-  p.style.left = (r.left + r.width / 2 - 30) + 'px'; p.style.top = (r.top - 10) + 'px';
+  p.style.left = (r.left + r.width / 2 - 34) + 'px'; p.style.top = (r.top - 8) + 'px';
   document.body.appendChild(p); setTimeout(() => p.remove(), 950);
 }
-const PRAISE = ['¡Bien!', '¡Exacto!', '¡Perfecto!', '¡Eso es!'];
+const PRAISE = ['¡Bien!', '¡Exacto!', '¡Perfecto!', '¡Eso es!', '¡Exprimido!'];
 function showSheet(ok, ex) {
   const s = $('sheet');
   s.className = 'sheet show ' + (ok ? 'ok' : 'ko');
@@ -273,33 +401,45 @@ function finish() {
   E.grantXp(S, L.xp, t);
   E.touchStreak(S, t);
   S.stats.lessons++;
-  const nb = E.award(S, t, L.mode === 'review' ? ['review'] : []);
+  S.stats.bestCombo = Math.max(S.stats.bestCombo, L.best);
+  if (L.mode === 'unit') S.daily.labs++;
+  const nb = E.award(S, t, L.mode === 'review' ? ['review'] : [], { hour: new Date().getHours() });
   persist();
   $('d-xp').textContent = '+' + L.xp;
   $('d-acc').textContent = acc + ' %';
   $('d-time').textContent = clock(Math.round((Date.now() - L.start) / 1000));
+  const trophy = $('trophy');
   if (L.mode === 'unit') {
-    const st = E.unitState(S, L.unit.id);
-    $('d-h').textContent = res.newRoot ? 'Root flag conseguida' : res.newUser ? 'User flag conseguida' : acc >= E.USER_FLAG ? 'Máquina repasada' : 'Casi: vuelve a intentarlo';
-    $('d-p').textContent = acc >= E.USER_FLAG ? `«${L.unit.es}» · ${L.unit.en}${acc < 100 ? `. Hazla sin fallos para la root flag (+${E.XP_ROOT} XP).` : ''}` : `Necesitas un ${E.USER_FLAG} % de acierto a la primera para la user flag.`;
+    const st = E.unitState(S, L.unit.id), boss = L.unit.boss;
+    const won = acc >= E.USER_FLAG;
+    trophy.className = 'trophy' + (won ? '' : ' meh');
+    trophy.innerHTML = I(boss && won ? 'skull' : won ? 'trophy' : 'refresh-cw');
+    $('d-h').textContent = res.newRoot ? 'Root flag conseguida' : res.newUser ? (boss ? 'Jefe derrotado' : 'User flag conseguida') : won ? 'Laboratorio repasado' : 'Casi: vuelve a intentarlo';
+    $('d-p').textContent = won ? `«${L.unit.es}» · ${L.unit.en}${acc < 100 ? `. Hazlo sin fallos para la root flag (+${boss ? E.XP_ROOT_BOSS : E.XP_ROOT} XP).` : ''}` : `Necesitas un ${E.USER_FLAG} % de acierto a la primera para la user flag.`;
     $('d-flags').innerHTML = flagHtml(st, true);
+    if (res.newRoot) Sound.root(); else if (res.newUser) Sound.flag();
   } else {
+    trophy.className = 'trophy'; trophy.innerHTML = I('refresh-cw');
     $('d-h').textContent = 'Repaso completado';
     $('d-p').textContent = 'Las expresiones acertadas vuelven más tarde; las falladas, mañana.';
     $('d-flags').innerHTML = '';
+    Sound.flag();
   }
+  if (nb.length) setTimeout(Sound.badge, 700);
   $('d-badges').innerHTML = badgesHtml(nb);
   const nu = E.nextUnit(S);
   $('d-next').hidden = L.mode !== 'unit';
   $('d-next').onclick = () => startUnit(nu.id);
-  show('done'); renderChips();
+  renderChrome();
+  show('done');
 }
 function finishPlacement() {
   const t = today();
   const { reached, open } = E.placementLevel(L.results);
   S.unlocked = Math.max(S.unlocked || 0, open);
-  const nb = E.award(S, t, ['placement']);
+  const nb = E.award(S, t, ['placement'], { hour: new Date().getHours() });
   persist();
+  $('trophy').className = 'trophy'; $('trophy').innerHTML = I('gauge');
   $('d-xp').textContent = '+0';
   $('d-acc').textContent = Math.round((L.results.filter((r) => r.ok).length / L.results.length) * 100) + ' %';
   $('d-time').textContent = clock(Math.round((Date.now() - L.start) / 1000));
@@ -307,46 +447,245 @@ function finishPlacement() {
   $('d-p').textContent = reached ? `Dominas hasta ${LEVELS[reached - 1].id}. Hemos abierto el nivel ${LEVELS[open].id} · ${LEVELS[open].name}.` : 'Empezamos desde A0. En unas pocas lecciones notarás el avance.';
   $('d-flags').innerHTML = '';
   $('d-badges').innerHTML = badgesHtml(nb);
+  Sound.flag();
   viewLevel = open;
   $('d-next').hidden = false;
-  $('d-next').onclick = () => startUnit(LEVELS[open].units[0].id);
-  show('done'); renderChips();
+  $('d-next').onclick = () => startUnit(E.contentOf(open)[0].id);
+  renderChrome();
+  show('done');
 }
 
-/* ── Eventos ── */
-const home = () => { hush(); renderHome(); show('home'); };
-$('s-next').addEventListener('click', next);
-$('quit').addEventListener('click', home);
-$('go-home').addEventListener('click', home);
-$('d-home').addEventListener('click', home);
-$('b-back').addEventListener('click', home);
-$('continue').addEventListener('click', () => startUnit(E.nextUnit(S).id));
-$('review').addEventListener('click', () => { const d = E.dueItems(S, today()); if (d.length) beginSession({ mode: 'review', queue: E.reviewPlan(d, { canSpeak: canSpeak() }) }); });
-$('placement').addEventListener('click', () => beginSession({ mode: 'placement', queue: E.placementPlan() }));
-$('all-badges').addEventListener('click', () => { renderBadges(); show('badges'); });
-document.addEventListener('keydown', (e) => {
-  if ($('v-lesson').hidden || !L) return;
-  if ($('sheet').classList.contains('show')) { if (e.key === 'Enter' && document.activeElement !== $('s-next')) { e.preventDefault(); next(); } return; }
-  if (/^[1-4]$/.test(e.key) && document.activeElement && document.activeElement.id !== 'typein') { const b = $('ex').querySelectorAll('.opt')[+e.key - 1]; if (b && !b.disabled) b.click(); }
+/* ═══ Diálogos: foco atrapado, Escape y foco devuelto ═══ */
+let lastFocus = null;
+function openDialog(id) {
+  closeMore();
+  lastFocus = document.activeElement;
+  const w = $(id); w.hidden = false;
+  const first = w.querySelector('#s-input') || w.querySelector('[role="tab"][aria-selected="true"]') || w.querySelector('button');
+  if (first) first.focus(); // en el mismo instante: una tecla pulsada justo al abrir no se pierde
+}
+function closeDialog(id) { const w = $(id); if (w.hidden) return; w.hidden = true; if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+function closeDialogs() { ['search-dlg', 'help-dlg'].forEach((id) => { $(id).hidden = true; }); }
+document.querySelectorAll('.dlg-wrap').forEach((w) => {
+  w.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeDialog(w.id); });
+  w.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); closeDialog(w.id); return; }
+    if (e.key !== 'Tab') return;
+    const f = [...w.querySelectorAll('button:not([disabled]),[href],input,[tabindex]:not([tabindex="-1"])')].filter((x) => x.offsetParent !== null);
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
 });
-addEventListener('pagehide', () => { if (saveTimer) { clearTimeout(saveTimer); try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch { /* */ } } });
 
-/* Tema */
+/* Búsqueda */
+let sSel = 0, sList = [];
+function renderSearch() {
+  const q = $('s-input').value;
+  const r = E.search(q);
+  sList = [];
+  let html = '';
+  if (q.trim().length < 2) {
+    const quick = [['home', 'house', 'Inicio'], ['labs', 'flask-conical', 'Laboratorios'], ['review', 'refresh-cw', 'Repaso'], ['progress', 'chart-column', 'Progreso'], ['badges', 'award', 'Insignias'], ['placement', 'gauge', 'Prueba de nivel']];
+    html += '<div class="s-group">Ir a</div>' + quick.map(([g, ic, t]) => { sList.push({ go: g }); return `<button type="button" class="s-item" role="option" id="sr-${sList.length - 1}">${I(ic)}<span><b>${t}</b></span></button>`; }).join('');
+  } else {
+    if (r.units.length) html += '<div class="s-group">Laboratorios</div>' + r.units.map((u) => { sList.push({ unit: u.id }); const ok = E.canPlay(S, u); return `<button type="button" class="s-item" role="option" id="sr-${sList.length - 1}">${I(u.boss ? 'skull' : 'flask-conical')}<span><b>${esc(u.es)}</b><small>${u.level} · ${TIERS[u.tier].t} · ${ok ? esc(u.en) : 'bloqueado'}</small></span></button>`; }).join('');
+    if (r.items.length) html += '<div class="s-group">Expresiones</div>' + r.items.map((it) => { sList.push({ unit: it.unit, item: it }); const u = E.UNIT_BY_ID[it.unit]; return `<button type="button" class="s-item" role="option" id="sr-${sList.length - 1}">${I('book-open')}<span><b lang="en">${esc(it.en)}</b><small>${esc(it.es)} · ${u.level} · ${esc(u.es)}</small></span></button>`; }).join('');
+    if (!sList.length) html = `<div class="s-empty">Nada para «${esc(q)}». Prueba en inglés o en español.</div>`;
+  }
+  $('s-results').innerHTML = html;
+  sSel = 0; markSel();
+  $('s-results').querySelectorAll('.s-item').forEach((b, i) => { b.addEventListener('click', () => pickSearch(i)); b.addEventListener('mousemove', () => { sSel = i; markSel(); }); });
+}
+function markSel() {
+  $('s-results').querySelectorAll('.s-item').forEach((b, i) => b.setAttribute('aria-selected', i === sSel ? 'true' : 'false'));
+  $('s-input').setAttribute('aria-activedescendant', sList.length ? 'sr-' + sSel : '');
+  const el = $('sr-' + sSel); if (el) el.scrollIntoView({ block: 'nearest' });
+}
+function pickSearch(i) {
+  const r = sList[i]; if (!r) return;
+  closeDialog('search-dlg');
+  if (r.go) return go(r.go);
+  const u = E.UNIT_BY_ID[r.unit];
+  if (r.item) say(r.item.en);
+  viewLevel = u.li; go('labs');
+  setTimeout(() => { const b = document.querySelector(`.lab[data-unit="${u.id}"]`); if (b) { b.scrollIntoView({ block: 'center', behavior: reduce.matches ? 'auto' : 'smooth' }); b.focus({ preventScroll: true }); } }, 60);
+}
+$('s-input').addEventListener('input', renderSearch);
+$('s-input').addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown') { e.preventDefault(); sSel = Math.min(sList.length - 1, sSel + 1); markSel(); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); sSel = Math.max(0, sSel - 1); markSel(); }
+  if (e.key === 'Enter') { e.preventDefault(); pickSearch(sSel); }
+});
+function openSearch() { $('s-input').value = ''; renderSearch(); openDialog('search-dlg'); }
+
+/* Ayuda: el método se genera desde las constantes del motor */
+const ECO = [
+  ['LemonByte', 'Este laboratorio de inglés', null, 'https://github.com/heindall92/lemonbyte', true],
+  ['Rosetta Multinorma', '15 normas y leyes sobre 152 controles', 'https://heindall92.github.io/rosetta_multinorma/', 'https://github.com/heindall92/rosetta_multinorma'],
+  ['CTEM-Nexus', 'Exposición y rutas de ataque', 'https://heindall92.github.io/ctem-nexus/', 'https://github.com/heindall92/ctem-nexus'],
+  ['KAIROS', 'Continuidad: BIA, BCP y DRP', 'https://heindall92.github.io/kairos/dist/index.html', 'https://github.com/heindall92/kairos'],
+  ['ENS Compliance Studio', 'Las 73 medidas del ENS', 'https://heindall92.github.io/grc_ens_compliance_studio/app/dist/ens-compliance-studio.html', 'https://github.com/heindall92/grc_ens_compliance_studio'],
+  ['ENS AD Auditor', 'Active Directory frente al ENS', 'https://heindall92.github.io/ens_ad-auditor/', 'https://github.com/heindall92/ens_ad-auditor'],
+  ['ARGOS', 'Laboratorio de auditoría GRC', 'https://heindall92.github.io/argos-grc/', 'https://github.com/heindall92/argos-grc'],
+  ['MCP-Shield', 'Configuraciones MCP de asistentes de IA', 'https://heindall92.github.io/mcp-shield/', 'https://github.com/heindall92/mcp-shield'],
+  ['Norvik', 'Gobernanza de seguridad (escritorio)', null, 'https://github.com/heindall92/Norvik_Gobernanza'],
+];
+function fillHelp() {
+  document.querySelectorAll('[data-const="USER_FLAG"]').forEach((e) => { e.textContent = E.USER_FLAG; });
+  document.querySelectorAll('[data-const="BOSS_GATE"]').forEach((e) => { e.textContent = Math.round(E.BOSS_GATE * 100); });
+  $('hp-metodo').innerHTML = `<h3>Cómo se calcula todo</h3>
+    <div class="formula">
+      <div><span>Acierto a la primera</span><b>${E.XP_OK} XP</b></div>
+      <div><span>Combo (desde el tercer acierto seguido)</span><b>+${E.XP_COMBO} XP</b></div>
+      <div><span>Root flag en un lab</span><b>+${E.XP_ROOT} XP</b></div>
+      <div><span>Root flag en un jefe final</span><b>+${E.XP_ROOT_BOSS} XP</b></div>
+      <div><span>User flag</span><b>≥ ${E.USER_FLAG} % a la primera</b></div>
+      <div><span>Jefe final disponible</span><b>${Math.round(E.BOSS_GATE * 100)} % de los labs del nivel</b></div>
+      <div><span>Meta diaria</span><b>${E.DAILY_GOAL} XP</b></div>
+    </div>
+    <h3>Repaso espaciado</h3>
+    <p>Cada expresión vive en una caja. Si la aciertas a la primera sube de caja; si fallas, vuelve a la primera. La caja decide cuándo vuelve:</p>
+    <div class="formula">${E.BOXES.slice(1).map((d, i) => `<div><span>Caja ${i + 1}</span><b>${d === 1 ? 'mañana' : `en ${d} días`}</b></div>`).join('')}</div>
+    <p class="note">${I('info')}Lo fallado durante un lab se repite al final del mismo lab, pero ya no cuenta para el acierto a la primera.</p>`;
+  $('hp-labs').innerHTML = `<h3>Fases por dificultad</h3>
+    <div class="tier-list">${Object.entries(TIERS).map(([k, v]) => `<div>${tierTag(k)}<span>${v.d}</span></div>`).join('')}</div>
+    <h3>Tipos de laboratorio</h3>
+    <div class="tier-list">${Object.entries(KINDS).map(([k, v]) => `<div>${kindTag(k)}<span>${v.d}</span></div>`).join('')}</div>
+    <h3>Los seis niveles</h3>
+    <div class="formula">${LEVELS.map((Lv, li) => `<div><span>${Lv.id} · ${esc(Lv.name)}</span><b>${E.unitsOf(li).length} labs</b></div>`).join('')}</div>
+    <p class="note">${I('flask-conical')}En total, ${UNITS.length} laboratorios y ${E.ITEMS.length} expresiones con su frase de ejemplo. Desde el B1, inglés de IT, ciberseguridad y GRC.</p>`;
+  $('eco').innerHTML = ECO.map(([n, d, app, code, self]) => `<div class="eco-item${self ? ' self' : ''}"><div><b>${n}</b><small>${d}</small></div>${app ? `<a href="${app}" target="_blank" rel="noopener noreferrer">Abrir</a>` : ''}<a href="${code}" target="_blank" rel="noopener noreferrer">Código</a></div>`).join('');
+}
+const HELP_TABS = ['guia', 'metodo', 'labs', 'atajos', 'glosario', 'acerca'];
+function helpTab(name, focus) {
+  HELP_TABS.forEach((t) => {
+    const on = t === name, b = $('ht-' + t);
+    b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; $('hp-' + t).hidden = !on;
+    if (on && focus) b.focus();
+  });
+}
+HELP_TABS.forEach((t, i) => {
+  const b = $('ht-' + t);
+  b.addEventListener('click', () => helpTab(t));
+  b.addEventListener('keydown', (e) => {
+    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (d) { e.preventDefault(); helpTab(HELP_TABS[(i + d + HELP_TABS.length) % HELP_TABS.length], true); }
+  });
+});
+function openHelp(tab = 'guia') { helpTab(tab); openDialog('help-dlg'); }
+$('copy-mail').addEventListener('click', async () => {
+  const mail = $('mail').textContent;
+  let ok = false;
+  try { await navigator.clipboard.writeText(mail); ok = true; } catch {
+    const r = document.createRange(); r.selectNodeContents($('mail')); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    try { ok = document.execCommand('copy'); } catch { /* */ }
+  }
+  toast(`${I(ok ? 'check' : 'mail')}${ok ? 'Correo copiado' : 'Correo seleccionado: pulsa Ctrl+C'}`);
+});
+
+/* ═══ Lateral, tema, acento y sonido ═══ */
+const app = $('app');
+const narrow = () => matchMedia('(max-width:1100px)').matches;
+function sideState() {
+  const open = narrow() ? app.classList.contains('expanded') : !app.classList.contains('collapsed');
+  $('toggle-side').setAttribute('aria-expanded', open);
+  $('toggle-side').setAttribute('aria-label', open ? 'Contraer la barra lateral' : 'Abrir la barra lateral');
+  setTimeout(moveNavPill, 360);
+}
+function toggleSide() {
+  if (narrow()) app.classList.toggle('expanded'); else { app.classList.toggle('collapsed'); pref.set('lemonbyte-side', app.classList.contains('collapsed') ? 'c' : 'o'); }
+  sideState();
+}
+if (pref.get('lemonbyte-side', 'o') === 'c') app.classList.add('collapsed');
+$('toggle-side').addEventListener('click', toggleSide);
+
 const themeBtn = $('theme');
 const sysDark = matchMedia('(prefers-color-scheme: dark)');
 const isDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : sysDark.matches);
-try { const t = localStorage.getItem('hermes-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch { /* */ }
-const themeUI = () => { themeBtn.innerHTML = I(isDark() ? 'sun' : 'moon'); themeBtn.setAttribute('aria-label', isDark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'); };
-themeBtn.addEventListener('click', () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('hermes-theme', t); } catch { /* */ } themeUI(); });
+{ const t = pref.get('lemonbyte-theme', ''); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; }
+const themeUI = () => { themeBtn.setAttribute('aria-checked', isDark()); };
+themeBtn.addEventListener('click', () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; pref.set('lemonbyte-theme', t); themeUI(); });
 if (sysDark.addEventListener) sysDark.addEventListener('change', themeUI);
 
-/* Gancho solo para las pruebas automáticas (?test): expone el ejercicio en curso y el estado. */
-if (/[?&]test\b/.test(location.search)) window.__HERMES__ = { E, current: () => (L ? L.queue[L.i] : null), state: () => S };
+const ACCENTS = [['azul', 'Azul eléctrico', '#3f7bff'], ['rosa', 'Rosa', '#e3478f'], ['solar', 'Solar', '#e79a12'], ['glaciar', 'Glaciar', '#1fb8cc'], ['orquidea', 'Orquídea', '#8a68ff'], ['verde', 'Verde bosque', '#3d9152'], ['rojo', 'Rojo', '#e04848']];
+$('acc-dots').innerHTML = ACCENTS.map(([id, n, c]) => `<button type="button" class="press" data-acc="${id}" title="${n}" aria-label="${n}" aria-pressed="false" style="background:${c}"></button>`).join('');
+function setAccent(a) {
+  if (a === 'azul') delete document.documentElement.dataset.accent; else document.documentElement.dataset.accent = a;
+  document.querySelectorAll('[data-acc]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.acc === a));
+  pref.set('lemonbyte-accent', a);
+}
+$('acc-dots').addEventListener('click', (e) => { const b = e.target.closest('[data-acc]'); if (b) setAccent(b.dataset.acc); });
+{ const a = pref.get('lemonbyte-accent', 'azul'); setAccent(ACCENTS.some((x) => x[0] === a) ? a : 'azul'); }
+
+const soundBtn = $('sound');
+const soundUI = () => { soundBtn.setAttribute('aria-pressed', Sound.on); soundBtn.setAttribute('aria-label', Sound.on ? 'Sonido activado' : 'Sonido desactivado'); soundBtn.innerHTML = I(Sound.on ? 'volume-2' : 'volume-x'); };
+soundBtn.addEventListener('click', () => { Sound.set(!Sound.on); soundUI(); if (Sound.on) Sound.ok(); toast(`${I(Sound.on ? 'volume-2' : 'volume-x')}${Sound.on ? 'Sonidos activados' : 'Sonidos desactivados'}`); });
+
+/* Menú «Más» (móvil) */
+const moreBtn = $('more-btn'), morePop = $('more-pop');
+function closeMore() { if (!morePop.hidden) { morePop.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); } }
+moreBtn.addEventListener('click', () => { const o = morePop.hidden; morePop.hidden = !o; moreBtn.setAttribute('aria-expanded', o); if (o) morePop.querySelector('button').focus(); });
+document.addEventListener('pointerdown', (e) => { if (!morePop.hidden && !e.target.closest('#more-pop, #more-btn')) closeMore(); });
+
+/* ═══ Eventos globales ═══ */
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-go]');
+  if (g) { e.preventDefault(); go(g.dataset.go); return; }
+  const h = e.target.closest('[data-help]');
+  if (h) { closeMore(); openHelp(h.dataset.help); return; }
+  const u = e.target.closest('[data-unit]');
+  if (u && !u.disabled) { startUnit(u.dataset.unit); return; }
+  const st = e.target.closest('#route .st');
+  if (st) { viewLevel = +st.dataset.level; renderLabs(); const nb = document.querySelector(`#route .st[data-level="${viewLevel}"]`); if (nb) nb.focus(); }
+});
+$('route').addEventListener('keydown', (e) => {
+  const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+  if (!d) return;
+  e.preventDefault();
+  viewLevel = (viewLevel + d + LEVELS.length) % LEVELS.length; renderLabs();
+  document.querySelector(`#route .st[data-level="${viewLevel}"]`).focus();
+});
+$('continue').addEventListener('click', () => startUnit(E.nextUnit(S).id));
+$('review').addEventListener('click', startReview);
+$('open-search').addEventListener('click', openSearch);
+$('open-help').addEventListener('click', () => openHelp());
+$('s-next').addEventListener('click', next);
+$('quit').addEventListener('click', () => { hush(); go('labs'); });
+$('d-home').addEventListener('click', () => { if (L && L.unit) viewLevel = L.unit.li; go('labs'); });
+$('kbd-k').textContent = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K';
+document.addEventListener('keydown', (e) => {
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName);
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if ($('search-dlg').hidden) openSearch(); else closeDialog('search-dlg'); return; }
+  if (!$('search-dlg').hidden || !$('help-dlg').hidden) return;
+  if (e.key === 'Escape') { closeMore(); if (view === 'lesson') { hush(); go('labs'); } return; }
+  if (view === 'lesson' && L) {
+    if ($('sheet').classList.contains('show')) { if (e.key === 'Enter' && document.activeElement !== $('s-next')) { e.preventDefault(); next(); } return; }
+    if (/^[1-4]$/.test(e.key) && !typing) { const b = $('ex').querySelectorAll('.opt')[+e.key - 1]; if (b && !b.disabled) b.click(); }
+    return;
+  }
+  if (typing) return;
+  if (e.key === '?') { e.preventDefault(); openHelp(); }
+  if (e.key === '[') { e.preventDefault(); toggleSide(); }
+});
+addEventListener('resize', () => { moveNavPill(); });
+addEventListener('pagehide', () => { if (saveTimer) { clearTimeout(saveTimer); try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch { /* */ } } });
+addEventListener('hashchange', () => { const v = Object.keys(HASH).find((k) => '#' + HASH[k] === location.hash); if (v && view !== 'lesson') { render(v); show(v); } });
+
+/* Gancho solo para las pruebas automáticas (?test): ejercicio en curso y estado. */
+if (/[?&]test\b/.test(location.search)) window.__LEMONBYTE__ = { E, current: () => (L ? L.queue[L.i] : null), state: () => S, sound: Sound };
 
 /* Arranque */
 loadLocal();
 themeUI();
+soundUI();
 setSync(false);
-renderHome();
+fillHelp();
+sideState();
+{
+  const start = Object.keys(HASH).find((k) => '#' + HASH[k] === location.hash) || 'home';
+  if (location.hash === '#repaso' || location.hash === '#prueba') history.replaceState(null, '', '#inicio');
+  render(start); show(start, { focus: false });
+}
 connect();
 })();

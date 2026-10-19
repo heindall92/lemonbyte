@@ -1,5 +1,5 @@
-"""Accesibilidad con axe-core (WCAG 2.2 A/AA) en todas las vistas, cada tipo de ejercicio y la hoja de respuesta,
-en tema claro y oscuro, escritorio y móvil.
+"""Accesibilidad de LemonByte con axe-core (WCAG 2.2 A/AA): todas las vistas, cada tipo de ejercicio, la hoja de
+respuesta, la búsqueda, cada pestaña de la ayuda y el menú móvil; en tema claro y oscuro, escritorio y móvil.
 
 Uso:  python3 tests/a11y_app.py     (falla si hay alguna infracción; detalle en tests/artifacts/a11y.json)
 axe-core se inyecta con la CSP desactivada solo en este contexto de prueba; la CSP se prueba en e2e_app.py.
@@ -19,53 +19,59 @@ TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 
 
 def settle(page):
-    """Espera a que terminen las animaciones para que axe mida los colores finales."""
-    page.wait_for_timeout(120)
+    """Espera a que terminen transiciones y animaciones para que axe mida los colores finales."""
+    page.wait_for_timeout(450)
     page.evaluate("Promise.all(document.getAnimations().map(a => a.finished.catch(() => {})))")
 
 
-def correct_answer(page):
-    ex = page.evaluate("(() => { const e = window.__HERMES__.current(); return { type: e.type, correct: e.correct }; })()")
+def solve(page, right=True):
+    ex = page.evaluate("(() => { const e = window.__LEMONBYTE__.current(); return { type: e.type, correct: e.correct }; })()")
     if ex["type"] in ("meaning", "reverse", "listen", "gap"):
-        page.evaluate("(c) => [...document.querySelectorAll('#ex .opt')].find(b => b.dataset.v.toLowerCase() === c.toLowerCase()).click()", ex["correct"])
+        page.evaluate("([c, r]) => [...document.querySelectorAll('#ex .opt')].find(b => (b.dataset.v.toLowerCase() === c.toLowerCase()) === r).click()", [ex["correct"], right])
     elif ex["type"] == "type":
-        page.fill("#typein", ex["correct"]); page.click("#check")
-    else:
+        page.fill("#typein", ex["correct"] if right else "zzz"); page.click("#check")
+    elif right:
         for w in ex["correct"].split(" "):
             page.evaluate("(w) => [...document.querySelectorAll('#bank .tile')].find(b => !b.disabled && b.textContent === w).click()", w)
         page.click("#check")
+    else:
+        page.locator("#bank .tile").first.click(); page.click("#check")
 
 
-def states(page):
+def states(page, mobile):
+    nav = (lambda g: page.click(f'.bottom [data-go="{g}"]')) if mobile else (lambda g: page.click(f'.nav [data-go="{g}"]'))
     yield "inicio"
-    page.click("#continue")
+    nav("labs"); yield "laboratorios"
+    page.click('#route .st[data-level="3"]'); yield "nivel bloqueado"
+    page.click('#route .st[data-level="0"]')
+    page.click('.lab[data-unit="a0-1"]')
     seen = set()
     while page.locator("#v-lesson").is_visible():
-        t = page.evaluate("window.__HERMES__.current().type")
+        t = page.evaluate("window.__LEMONBYTE__.current().type")
         if t not in seen:
-            seen.add(t)
-            yield f"ejercicio/{t}"
-        correct_answer(page)
-        if len(seen) == 1:
-            yield "hoja/acierto"
+            seen.add(t); yield f"ejercicio/{t}"
+        solve(page)
+        if len(seen) == 1 and "hoja/acierto" not in seen:
+            seen.add("hoja/acierto"); yield "hoja/acierto"
         page.click("#s-next")
     yield "final"
     page.click("#d-home")
-    page.click('#units .unit[data-unit="a0-2"]')
-    t = page.evaluate("window.__HERMES__.current().type")
-    if t == "type":
-        page.fill("#typein", "zzz"); page.click("#check")
-    elif t == "build":
-        page.locator("#bank .tile").first.click(); page.click("#check")
-    else:
-        page.evaluate("(c) => [...document.querySelectorAll('#ex .opt')].find(b => b.dataset.v.toLowerCase() !== c.toLowerCase()).click()", page.evaluate("window.__HERMES__.current().correct"))
-    yield "hoja/fallo"
+    page.click('.lab[data-unit="a0-2"]')
+    solve(page, right=False); yield "hoja/fallo"
     page.click("#quit")
-    page.click("#all-badges")
+    nav("progress"); yield "progreso"
+    if mobile:
+        page.click("#more-btn"); yield "menú más"
+        page.click('#more-pop [data-go="badges"]')
+    else:
+        nav("badges")
     yield "insignias"
-    page.click("#b-back")
-    page.click('#route .st >> nth=3')
-    yield "nivel bloqueado"
+    page.click("#open-search"); page.fill("#s-input", "meeting"); yield "búsqueda"
+    page.keyboard.press("Escape")
+    page.click("#open-help")
+    for t in ["guia", "metodo", "labs", "atajos", "glosario", "acerca"]:
+        page.click(f"#ht-{t}"); yield f"ayuda/{t}"
+    page.keyboard.press("Escape")
 
 
 results, total = {}, 0
@@ -76,7 +82,7 @@ with sync_playwright() as p:
             ctx = browser.new_context(viewport={"width": w, "height": h}, color_scheme=scheme, bypass_csp=True)
             page = ctx.new_page()
             page.goto(APP)
-            for name in states(page):
+            for name in states(page, w < 768):
                 settle(page)
                 page.add_script_tag(content=AXE)
                 v = page.evaluate("(tags) => axe.run(document, { runOnly: tags }).then(r => r.violations.map(v => ({ id: v.id, n: v.nodes.length, where: v.nodes.slice(0, 3).map(x => x.target.join(' ')) })))", TAGS)

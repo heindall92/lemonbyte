@@ -1,8 +1,8 @@
 {
-  "name": "hermes-english-lab",
-  "version": "0.1.0",
+  "name": "lemonbyte",
+  "version": "0.2.0",
   "private": true,
-  "description": "Laboratorio de inglés por niveles A0–C1 con máquinas, flags, XP, rachas, insignias y repaso espaciado, en un único fichero HTML.",
+  "description": "LemonByte: 100 laboratorios de inglés del A0 al C1 con flags, jefes finales, XP, rachas, insignias y repaso espaciado, en un único fichero HTML.",
   "license": "GPL-2.0-only",
   "author": "Yoandy Ramírez Delgado <yoandyramirezdelgado@gmail.com>",
   "engines": { "node": ">=18" },

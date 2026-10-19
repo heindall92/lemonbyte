@@ -10,12 +10,12 @@
 
 - **Una PR por versión.** Rama `version/X.Y.Z` desde `main`, `./run_tests.sh` en verde (motor, e2e y axe) y PR hacia `main`. La fusiona Yoandy.
 - `dist/` se versiona: tras cambiar `app/`, ejecuta `node app/build.js` y sube el resultado (la CI comprueba que está al día).
-- El contenido va en `app/src/content.js`; la lógica, en `app/src/engine.js` (pura y probada); la interfaz, en `app/src/ui.js`.
+- El contenido va en `app/src/content/<nivel>.js`; la lógica, en `app/src/engine.js` (pura y probada); la interfaz, en `app/src/ui.js`.
 
 ## Estilo y diseño
 
 - Antes de tocar la interfaz, el contenido o el repositorio, carga la skill `estilo-yoandy` (`SKILL.md` y la referencia que toque).
-- La visualización propia de HERMES es la ruta de estaciones A0→C1 y las flags por máquina; no usar anillos (son de Rosetta).
+- La visualización propia de LemonByte es el mapa de los 100 laboratorios (matriz de celdas por nivel) y las flags; no usar anillos (son de Rosetta). El amarillo eléctrico es para lo que se gana y va siempre de relleno con texto oscuro; el logo es el limón de `app/vendor/lemon-mark.webp`.
 
 ## Siguiente paso
 
