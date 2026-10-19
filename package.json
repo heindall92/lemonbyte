@@ -1,6 +1,6 @@
 {
   "name": "lemonbyte",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "LemonByte: 100 laboratorios de inglés del A0 al C1 con flags, jefes finales, XP, rachas, insignias y repaso espaciado, en un único fichero HTML.",
   "license": "GPL-2.0-only",

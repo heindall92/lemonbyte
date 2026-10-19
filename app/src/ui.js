@@ -672,6 +672,17 @@ addEventListener('resize', () => { moveNavPill(); });
 addEventListener('pagehide', () => { if (saveTimer) { clearTimeout(saveTimer); try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch { /* */ } } });
 addEventListener('hashchange', () => { const v = Object.keys(HASH).find((k) => '#' + HASH[k] === location.hash); if (v && view !== 'lesson') { render(v); show(v); } });
 
+/* Ondas de la tarjeta «Siguiente laboratorio»: solo se animan cuando se ven. Si la tarjeta sale de pantalla,
+   la vista de inicio se oculta (display:none no interseca) o la pestaña pasa a segundo plano, se pausan. */
+{
+  const rip = $('ripples');
+  let onScreen = true;
+  const sync = () => { rip.dataset.paused = String(!onScreen || document.hidden); };
+  if ('IntersectionObserver' in window) new IntersectionObserver(([en]) => { onScreen = en.isIntersecting; sync(); }).observe(rip.parentElement);
+  document.addEventListener('visibilitychange', sync);
+  sync();
+}
+
 /* Gancho solo para las pruebas automáticas (?test): ejercicio en curso y estado. */
 if (/[?&]test\b/.test(location.search)) window.__LEMONBYTE__ = { E, current: () => (L ? L.queue[L.i] : null), state: () => S, sound: Sound };
 
