@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.2.1 · 2026-10-19
+
+- La dirección de GitHub Pages (`heindall92.github.io/lemonbyte/`) abría el README en vez de la app: se añade un `index.html` en la raíz que abre `dist/index.html`, como en KAIROS y ARGOS. Una prueba e2e lo comprueba.
+
 ## 0.2.0 · 2026-10-19 · LemonByte
 
 El proyecto pasa a llamarse **LemonByte · Cyber English**, con su logo del limón.

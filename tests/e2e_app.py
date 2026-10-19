@@ -83,6 +83,11 @@ with sync_playwright() as p:
     page.on("console", lambda m: errores.append(m.text) if m.type == "error" else None)
     page.on("request", lambda r: red.append(r.url) if not r.url.startswith(("file:", "data:", "blob:")) else None)
 
+    print("== Portada de GitHub Pages")
+    page.goto((ROOT / "index.html").as_uri())
+    page.wait_for_url("**/dist/index.html")
+    check(page.url.endswith("/dist/index.html"), "la raíz del sitio abre la app (no el README)")
+
     print("== Primera visita")
     page.goto(APP)
     check(page.title() == "Inicio · LemonByte", f"título de la vista ({page.title()})")
