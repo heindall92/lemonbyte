@@ -83,6 +83,11 @@ with sync_playwright() as p:
     page.on("console", lambda m: errores.append(m.text) if m.type == "error" else None)
     page.on("request", lambda r: red.append(r.url) if not r.url.startswith(("file:", "data:", "blob:")) else None)
 
+    print("== Portada de GitHub Pages")
+    page.goto((ROOT / "index.html").as_uri())
+    page.wait_for_url("**/dist/index.html")
+    check(page.url.endswith("/dist/index.html"), "la raíz del sitio abre la app (no el README)")
+
     print("== Primera visita")
     page.goto(APP)
     check(page.title() == "Inicio · LemonByte", f"título de la vista ({page.title()})")
@@ -90,6 +95,20 @@ with sync_playwright() as p:
     check(page.locator("#continue-t").inner_text() == "Empezar", "botón «Empezar»")
     check(page.locator("#matrix-home .cell").count() == 100, "el inicio enseña el mapa de 100 labs")
     check(page.locator("#review").is_disabled(), "repaso desactivado sin expresiones aprendidas")
+    rip = page.evaluate("""(() => { const r = document.getElementById('ripples'), s = r.querySelectorAll('.ripple');
+      return { n: s.length, hidden: r.getAttribute('aria-hidden'), paused: r.dataset.paused, anim: getComputedStyle(s[0]).animationName,
+               ink: getComputedStyle(s[0]).borderTopColor, z: +getComputedStyle(document.getElementById('nc-title')).zIndex,
+               inside: r.parentElement.id }; })()""")
+    check(rip["n"] == 5 and rip["hidden"] == "true" and rip["inside"] == "next-card", f"cinco ondas decorativas en «Siguiente laboratorio» {rip}")
+    check(rip["anim"] == "ripple-out" and rip["paused"] == "false", "las ondas se animan mientras se ven")
+    check(rip["ink"] in ("rgb(245, 196, 0)", "rgb(255, 224, 26)"), f"ondas en el amarillo del limón ({rip['ink']})")
+    check(rip["z"] >= 1, "el texto de la tarjeta queda por encima de las ondas")
+    page.click(".nav [data-go=labs]")
+    page.wait_for_timeout(150)
+    check(page.get_attribute("#ripples", "data-paused") == "true", "las ondas se pausan al salir del inicio")
+    page.click(".nav [data-go=home]")
+    page.wait_for_timeout(150)
+    check(page.get_attribute("#ripples", "data-paused") == "false", "y vuelven al regresar")
     page.click(".nav [data-go=labs]")
     check(page.title() == "Laboratorios · LemonByte", "navegación a Laboratorios")
     check(page.locator("#route .st").count() == 6 and page.locator("#route .st.locked").count() == 5, "6 niveles, 5 bloqueados")
@@ -242,6 +261,13 @@ with sync_playwright() as p:
     page.evaluate(f"localStorage.removeItem('{KEY}'); localStorage.setItem('hermes-progress-v1', JSON.stringify({{ xp: 136, units: {{ 'a0-1': {{ user: true, root: true, best: 100 }} }} }}))")
     page.reload()
     check(page.locator("#c-xp").inner_text() == "136", "el progreso de HERMES 0.1 se conserva")
+
+    print("== Movimiento reducido")
+    rm = browser.new_page(viewport={"width": 1280, "height": 900}, reduced_motion="reduce")
+    rm.goto(APP)
+    st = rm.evaluate("[...document.querySelectorAll('#ripples .ripple')].map(s => [getComputedStyle(s).animationName, +getComputedStyle(s).opacity])")
+    check(all(a == "none" for a, _ in st) and sum(1 for _, o in st if o > 0) == 3, f"con movimiento reducido, tres anillos quietos {st}")
+    rm.close()
 
     print("== Móvil")
     m = browser.new_page(viewport={"width": 390, "height": 844})

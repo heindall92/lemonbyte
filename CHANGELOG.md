@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.2.2 · 2026-10-19
+
+- La tarjeta **«Siguiente laboratorio»** tiene ondas de limón: cinco anillos amarillos que nacen en su esquina superior derecha y se expanden y se desvanecen antes de llegar al texto. Sustituyen al halo fijo. En tema claro el anillo usa un amarillo algo más hondo (`#f5c400`) para que se vea sobre blanco, y en oscuro el amarillo eléctrico (`#ffe01a`).
+- Solo se animan cuando se ven: se pausan si la tarjeta sale de pantalla, al cambiar de vista o con la pestaña en segundo plano. Con movimiento reducido quedan tres anillos quietos.
+- Pruebas e2e nuevas: hay cinco ondas decorativas (`aria-hidden`), son amarillas, el texto queda por encima, se pausan fuera del inicio y quedan quietas con movimiento reducido.
+
+## 0.2.1 · 2026-10-19
+
+- La dirección de GitHub Pages (`heindall92.github.io/lemonbyte/`) abría el README en vez de la app: se añade un `index.html` en la raíz que abre `dist/index.html`, como en KAIROS y ARGOS. Una prueba e2e lo comprueba.
+
 ## 0.2.0 · 2026-10-19 · LemonByte
 
 El proyecto pasa a llamarse **LemonByte · Cyber English**, con su logo del limón.

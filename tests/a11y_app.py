@@ -19,9 +19,9 @@ TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 
 
 def settle(page):
-    """Espera a que terminen transiciones y animaciones para que axe mida los colores finales."""
+    """Espera a que terminen transiciones y animaciones finitas (las ondas son infinitas) para que axe mida los colores finales."""
     page.wait_for_timeout(450)
-    page.evaluate("Promise.all(document.getAnimations().map(a => a.finished.catch(() => {})))")
+    page.evaluate("Promise.all(document.getAnimations().filter(a => a.effect.getComputedTiming().iterations !== Infinity).map(a => a.finished.catch(() => {})))")
 
 
 def solve(page, right=True):

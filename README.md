@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://heindall92.github.io/lemonbyte/dist/index.html"><img alt="Abrir la app" src="https://img.shields.io/badge/Abrir_la_app-heindall92.github.io-FFD60A?style=for-the-badge&labelColor=0E5A1F"/></a>
+  <a href="https://heindall92.github.io/lemonbyte/"><img alt="Abrir la app" src="https://img.shields.io/badge/Abrir_la_app-heindall92.github.io-FFD60A?style=for-the-badge&labelColor=0E5A1F"/></a>
 </p>
 
 <p align="center">
@@ -71,7 +71,7 @@ Las apps de idiomas enseñan a pedir un café. LemonByte empieza por ahí, pero 
 
 ## Cómo usarlo
 
-- **En el navegador:** abre [la app](https://heindall92.github.io/lemonbyte/dist/index.html). El progreso se guarda en tu navegador.
+- **En el navegador:** abre [la app](https://heindall92.github.io/lemonbyte/). El progreso se guarda en tu navegador.
 - **Sin conexión:** descarga [`dist/index.html`](dist/index.html) y ábrelo con doble clic.
 - **En claude.ai:** [`dist/artifact/lemonbyte.html`](dist/artifact/lemonbyte.html) es la misma app preparada como artifact; allí el progreso se guarda además en tu cuenta y te sigue entre dispositivos.
 
