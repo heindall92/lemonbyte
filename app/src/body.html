@@ -1,0 +1,109 @@
+<header class="top">
+  <div class="wrap">
+    <button class="brand press" id="go-home" type="button" aria-label="HERMES, ir al inicio"><span class="mk" aria-hidden="true">HE</span><span>HERMES</span><small>English Lab</small></button>
+    <div class="chips">
+      <span class="chip fire" title="Días seguidos">{{i:flame}}<b id="c-streak">0</b></span>
+      <span class="chip xp" title="Experiencia total">{{i:zap}}<b id="c-xp">0</b></span>
+      <span class="chip sync" id="c-sync" title="Dónde se guarda tu progreso">{{i:cloud-off}}<span>este navegador</span></span>
+      <button class="icon-btn press" id="theme" type="button" aria-label="Cambiar tema">{{i:moon}}</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <!-- INICIO -->
+  <section id="v-home" aria-labelledby="h-home">
+    <div class="home">
+      <div>
+        <div class="card hero">
+          <div class="hero-top">
+            <div>
+              <div class="eyebrow" id="h-level-k">Nivel A0 · Primeros pasos</div>
+              <h1 id="h-home">Hola, operador. Tu siguiente máquina te espera.</h1>
+              <p id="h-sub">Cada unidad es una máquina: consigue la user flag aprobando la lección y la root flag haciéndola sin fallos.</p>
+            </div>
+            <button class="btn primary press" id="continue" type="button">{{i:play}}<span id="continue-t">Empezar</span></button>
+          </div>
+          <div class="route" id="route" role="group" aria-label="Niveles"><span class="fillbar" aria-hidden="true"></span></div>
+          <div class="goal">
+            <b>Meta diaria</b>
+            <div class="meter" aria-hidden="true"><i id="goal-bar"></i></div>
+            <small id="goal-t">0 / 50 XP</small>
+          </div>
+        </div>
+        <div class="sec-h"><h2 id="units-h">Máquinas del nivel A0</h2><p id="units-p">4 unidades</p></div>
+        <div class="units" id="units"></div>
+      </div>
+
+      <aside class="side">
+        <div class="card panel">
+          <h3>{{i:refresh-cw}}Repaso</h3>
+          <p id="rev-p">Las palabras vuelven justo antes de que se te olviden.</p>
+          <button class="btn primary press" id="review" type="button">{{i:refresh-cw}}<span id="rev-t">Repasar</span></button>
+        </div>
+        <div class="card panel">
+          <h3>{{i:gauge}}Prueba de nivel</h3>
+          <p>Doce preguntas como máximo. Desbloquea directamente los niveles que ya dominas.</p>
+          <button class="btn press" id="placement" type="button">{{i:target}}Hacer la prueba</button>
+        </div>
+        <div class="card panel">
+          <h3>{{i:award}}Insignias <span class="mono" id="bd-count" style="margin-left:auto;font-size:12px;color:var(--ink-3)"></span></h3>
+          <div class="badge-grid" id="badge-mini"></div>
+          <button class="link-btn" id="all-badges" type="button">Ver todas</button>
+        </div>
+      </aside>
+    </div>
+    <p class="foot">Sin anuncios ni seguimiento. El audio usa las voces de tu propio dispositivo. · HERMES v{{version}} · <a href="https://github.com/heindall92/hermes-english-lab">código abierto</a></p>
+  </section>
+
+  <!-- LECCIÓN -->
+  <section id="v-lesson" hidden aria-label="Lección">
+    <div class="lesson">
+      <div class="l-top">
+        <button class="icon-btn press" id="quit" type="button" aria-label="Salir de la lección">{{i:x}}</button>
+        <div class="progress" role="progressbar" aria-label="Progreso de la lección" aria-valuemin="0" aria-valuemax="100" id="l-prog"><i id="l-bar"></i></div>
+        <span class="combo" id="combo" aria-live="polite"></span>
+      </div>
+      <div class="card ex" id="ex"></div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="v-done" hidden aria-labelledby="d-h">
+    <div class="card done">
+      <div class="trophy">{{i:trophy}}</div>
+      <div>
+        <h2 id="d-h">Máquina completada</h2>
+        <p id="d-p"></p>
+      </div>
+      <div class="stats">
+        <div><b id="d-xp">0</b><span>XP ganada</span></div>
+        <div><b id="d-acc">0 %</b><span>Acierto a la primera</span></div>
+        <div><b id="d-time">0:00</b><span>Tiempo</span></div>
+      </div>
+      <div class="flags" id="d-flags"></div>
+      <div class="new-badges" id="d-badges"></div>
+      <div class="actions">
+        <button class="btn press" id="d-home" type="button">{{i:house}}Volver al mapa</button>
+        <button class="btn primary press" id="d-next" type="button">{{i:arrow-right}}Siguiente máquina</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSIGNIAS -->
+  <section id="v-badges" hidden aria-labelledby="b-h">
+    <div class="badges-page">
+      <button class="back press" id="b-back" type="button">{{i:chevron-left}}Volver</button>
+      <div class="sec-h" style="margin-top:0"><h2 id="b-h">Insignias</h2><p id="b-p"></p></div>
+      <div class="badge-list" id="badge-list"></div>
+    </div>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" role="status" aria-live="assertive">
+  <div class="wrap">
+    <div class="verdict" id="s-verdict"></div>
+    <div class="detail" id="s-detail"></div>
+    <button class="btn primary press" id="s-next" type="button">Continuar</button>
+  </div>
+</div>

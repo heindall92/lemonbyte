@@ -1,0 +1,14 @@
+{
+  "name": "hermes-english-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Laboratorio de inglés por niveles A0–C1 con máquinas, flags, XP, rachas, insignias y repaso espaciado, en un único fichero HTML.",
+  "license": "GPL-2.0-only",
+  "author": "Yoandy Ramírez Delgado <yoandyramirezdelgado@gmail.com>",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "node app/build.js",
+    "test:engine": "node --test tests/engine.test.js",
+    "test": "bash run_tests.sh"
+  }
+}
