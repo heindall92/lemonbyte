@@ -36,6 +36,7 @@ const LEVEL_FILES = ['a0', 'a1', 'a2', 'b1', 'b2', 'c1'];
 const js = [
   `window.LEMONBYTE_ICONS = ${JSON.stringify(ICONS)};`,
   ...LEVEL_FILES.map((f) => read('src', 'content', f + '.js')),
+  read('vendor', 'animateicons.js'),
   read('src', 'engine.js'),
   read('src', 'ui.js'),
 ].join('\n').replace(/<\/script/gi, '<\\/script');

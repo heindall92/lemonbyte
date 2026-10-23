@@ -25,6 +25,8 @@
   --r:22px; --side-w:256px;
   color-scheme:light;
 }
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .bottom{--tab-accent:#facc15;--tab-accent-soft:rgba(250,204,21,.13);--tab-accent-line:rgba(250,204,21,.28)}}
+:root[data-theme="dark"] .bottom{--tab-accent:#facc15;--tab-accent-soft:rgba(250,204,21,.13);--tab-accent-line:rgba(250,204,21,.28)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#08090c; --surface:#121419; --surface-2:#191c23; --surface-glass:rgba(18,20,25,.78);
   --fill:rgba(255,255,255,.06); --fill-2:rgba(255,255,255,.1);
@@ -523,7 +525,13 @@ a.cell:hover,button.cell:hover{transform:scale(1.15)}
     background:color-mix(in oklab,var(--surface) 94%,transparent);border:1px solid var(--line-2);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);box-shadow:var(--shadow-lg)}
   .bottom>a,.bottom>button{display:grid;justify-items:center;gap:3px;padding:7px 2px;border-radius:16px;border:0;background:transparent;text-decoration:none;color:var(--ink-2);font-size:11px;font-weight:600;cursor:pointer}
   .bottom .ico{font-size:21px}
-  .bottom [aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+  /* Acento limón solo para la barra inferior (no toca --accent de la app) */
+  .bottom{--tab-accent:#713f12;--tab-accent-soft:#fef3c7;--tab-accent-line:rgba(202,138,4,.45)}
+  .bottom svg.ai{width:21px;height:21px;fill:none;overflow:visible}
+  .bottom>a,.bottom>button{transition:color .2s,background-color .2s,box-shadow .2s}
+  .bottom>a:hover,.bottom>button:hover{color:var(--ink)}
+  .bottom [aria-current="page"]{color:var(--tab-accent);background:var(--tab-accent-soft);box-shadow:inset 0 0 0 1px var(--tab-accent-line)}
+  .bottom [aria-current="page"] span{font-weight:700}
   .more-pop{position:absolute;right:6px;bottom:calc(100% + 8px);display:grid;gap:2px;min-width:200px;padding:6px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-lg);transform-origin:bottom right;transition:opacity .2s var(--ease-out),transform .2s var(--ease-out)}
   @starting-style{.more-pop{opacity:0;transform:scale(.96)}}
   .more-pop button{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:12px;border:0;background:transparent;font-weight:600;cursor:pointer;text-align:left}

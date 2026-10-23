@@ -109,6 +109,34 @@ function toast(html, kind) {
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 4000);
 }
 
+/* ═══ Barra inferior: iconos animados (AnimateIcons) ═══
+ * Se animan una vez al pasar el puntero, al tocar y cuando la pestaña pasa a estar activa; nunca en bucle.
+ * Con movimiento reducido no se animan (isAnimated false y sin startAnimation). */
+const tabMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let tabActive = null;
+function playTabIcon(el) {
+  if (el === tabActive) return;
+  tabActive = el;
+  if (el && el._ai && !tabMotion.matches) el._ai.startAnimation();
+}
+(function animateTabIcons() {
+  const AI = window.LemonAnimateIcons;
+  if (!AI) return;
+  document.querySelectorAll('.bottom [data-ai]').forEach((el) => {
+    const def = AI.icons[el.dataset.ai], old = el.querySelector('svg.ico');
+    if (!def || !old) return;
+    const ico = AI.createIcon(def, { size: 21, isAnimated: false });
+    ico.classList.add('ico', 'ai');
+    ico.setAttribute('aria-hidden', 'true');
+    ico.setAttribute('focusable', 'false');
+    old.replaceWith(ico);
+    el._ai = ico;
+    const play = () => { if (!tabMotion.matches) ico.startAnimation(); };
+    el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') play(); });
+    el.addEventListener('pointerdown', play);
+  });
+})();
+
 /* ═══ Navegación ═══ */
 const VIEWS = ['home', 'labs', 'progress', 'badges', 'lesson', 'done'];
 const HASH = { home: 'inicio', labs: 'labs', progress: 'progreso', badges: 'insignias' };
@@ -120,6 +148,7 @@ function show(v, { focus = true } = {}) {
   if (v !== 'lesson') hideSheet();
   document.querySelectorAll('[data-go]').forEach((a) => { if (a.tagName === 'A') { if (a.dataset.go === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); } });
   document.title = `${TITLE[v]} · LemonByte`;
+  playTabIcon(document.querySelector('.bottom [aria-current="page"]'));
   moveNavPill();
   scrollTo({ top: 0, behavior: 'auto' });
   if (focus) { const h = $('v-' + v).querySelector('h1'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
